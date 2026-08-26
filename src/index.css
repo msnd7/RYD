@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-[#f4f7fb] text-ink-900 font-sans antialiased;
+    background-image:
+      radial-gradient(1200px 500px at 100% -10%, rgba(31,120,189,.07), transparent 60%),
+      radial-gradient(900px 400px at 0% 0%, rgba(247,164,28,.07), transparent 55%);
+    background-attachment: fixed;
+  }
+  * { scrollbar-width: thin; scrollbar-color: #c8d5e2 transparent; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: #c8d5e2; border-radius: 9px; }
+  input, select, textarea, button { font-family: inherit; }
+  h1,h2,h3,h4 { @apply font-display; }
+}
+
+@layer components {
+  .card { @apply bg-white rounded-2xl shadow-soft border border-slate-200/70; }
+  .card-p { @apply card p-5; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition
+          active:scale-[.98] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap; }
+  .btn-primary { @apply btn bg-brand-700 text-white hover:bg-brand-800 shadow-soft; }
+  .btn-gold { @apply btn bg-gold-500 text-white hover:bg-gold-600 shadow-soft; }
+  .btn-olive { @apply btn bg-olive-600 text-white hover:bg-olive-700 shadow-soft; }
+  .btn-ghost { @apply btn bg-white text-ink-700 border border-slate-200 hover:bg-slate-50; }
+  .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700; }
+  .btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
+  .field { @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none
+            transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100 placeholder:text-ink-300; }
+  .label { @apply block text-[13px] font-bold text-ink-700 mb-1.5; }
+  .chip { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold whitespace-nowrap; }
+  .th { @apply text-right text-[12px] font-bold text-ink-500 px-4 py-3 whitespace-nowrap; }
+  .td { @apply px-4 py-3 text-sm text-ink-900 align-middle; }
+  .row { @apply border-t border-slate-100 hover:bg-brand-50/40 transition; }
+  .tab { @apply px-4 py-2 rounded-xl text-sm font-bold text-ink-500 hover:bg-white hover:text-brand-700 transition; }
+  .tab-on { @apply bg-white text-brand-700 shadow-soft; }
+  .sect-title { @apply text-lg font-extrabold text-ink-900; }
+  .muted { @apply text-sm text-ink-500; }
+}
+
+/* ===== الطباعة: لا تُطبع صفحة المنصة كاملة، فقط منطقة التقرير ===== */
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body { background: #fff !important; }
+  body * { visibility: hidden !important; }
+  #print-area, #print-area * { visibility: visible !important; }
+  #print-area {
+    position: absolute; inset-inline: 0; top: 0; width: 100%;
+    padding: 0 !important; margin: 0 !important; box-shadow: none !important; border: 0 !important;
+  }
+  .no-print { display: none !important; }
+  .print-break { break-after: page; }
+  .card { box-shadow: none !important; border: 1px solid #dbe3ec !important; }
+}
+
+.fade-in { animation: fade .28s ease both; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+.pop-in { animation: pop .3s cubic-bezier(.2,.9,.3,1.3) both; }
+@keyframes pop { from { opacity: 0; transform: scale(.94) translateY(10px) } to { opacity: 1; transform: none } }
+.bar { animation: grow .7s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes grow { from { transform: scaleY(0) } to { transform: scaleY(1) } }
