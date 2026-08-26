@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDb, uid } from '../store/db'
 import { useAuth } from '../store/auth'
-import { Card, Modal, Field, Select, Badge, Empty, useToast, PrintBar } from '../components/ui'
+import { Card, Modal, Field, Select, Badge, Empty, useToast, PrintBar, Menu } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import { AiTextArea } from '../components/AiTextArea'
 import { ReportHeader, ReportFooter } from '../components/ReportShell'
 import { todayISO, fmtDate, fmtDayName } from '../lib/date'
@@ -35,10 +36,13 @@ export default function Meetings({ scope }: { scope?: 'complex' }) {
 
   return (
     <div className="space-y-5">
-      <Card title="محاضر الاجتماعات"
-        subtitle="يُحدَّد المكان والتاريخ والحاضرون حسب مكان انعقاد الاجتماع"
-        action={<button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ محضر جديد</button>}
-        pad={false}>
+      <PageHeader
+        eyebrow={isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
+        title="محاضر الاجتماعات"
+        description="اجتماع على مستوى المجمع أو المسجد أو اللجنة — تتغيّر قائمة الحاضرين تلقائيًا حسب نطاق الاجتماع، والمحضر قابل للطباعة."
+        actions={<button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ محضر جديد</button>}
+      />
+      <Card pad={false}>
         {list.length === 0 ? (
           <Empty icon="📄" title="لا توجد محاضر" hint="سجّل مخرجات الاجتماع ليبقى موثّقًا ويسهل الرجوع إليه."
             action={<button className="btn-primary btn-sm" onClick={() => setOpen(true)}>＋ كتابة محضر</button>} />
@@ -61,12 +65,15 @@ export default function Meetings({ scope }: { scope?: 'complex' }) {
                     </p>
                     {m.decisions && <p className="text-[12.5px] text-ink-700 mt-2 leading-6 line-clamp-2 whitespace-pre-wrap">{m.decisions}</p>}
                   </div>
-                  <div className="flex gap-1.5 no-print">
+                  <div className="flex gap-1.5 no-print shrink-0">
                     <button className="btn-ghost btn-sm" onClick={() => setView(m)}>عرض وطباعة</button>
-                    {(isDirector || m.createdBy === user?.id) && <>
-                      <button className="btn-ghost btn-sm" onClick={() => { setEditing(m); setOpen(true) }}>تعديل</button>
-                      <button className="btn-sm px-2 rounded-lg text-orange-600 hover:bg-orange-50" onClick={() => remove(m)}>حذف</button>
-                    </>}
+                    {(isDirector || m.createdBy === user?.id) && (
+                      <Menu items={[
+                        { label: 'تعديل المحضر', icon: '✎', onClick: () => { setEditing(m); setOpen(true) } },
+                        'sep',
+                        { label: 'حذف المحضر', icon: '🗑', danger: true, onClick: () => remove(m) },
+                      ]} />
+                    )}
                   </div>
                 </div>
               </li>

@@ -1,4 +1,4 @@
-import logoSrc from '../assets/logo.jpg'
+import logoSrc from '../assets/logo.png'
 import { useDb } from '../store/db'
 import { fmtDate, fmtHijri, todayISO } from '../lib/date'
 
@@ -9,7 +9,7 @@ export function ReportHeader({ title, subtitle, period }: {
   const { db } = useDb()
   return (
     <header className="flex items-center gap-4 border-b-2 border-navy-700 pb-4">
-      <img src={logoSrc} width={56} height={56} alt="" className="object-contain" />
+      <img src={logoSrc} alt="" style={{ height: 52 }} className="w-auto object-contain" />
       <div className="flex-1 min-w-0">
         <h2 className="font-display font-black text-[19px] text-navy-800">{db.settings.complexName}</h2>
         <p className="text-[11px] text-ink-500">{db.settings.complexSubtitle}</p>

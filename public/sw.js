@@ -1,6 +1,6 @@
 /* Service Worker — منصة رياض القرآن */
 const CACHE = 'ryd-v1'
-const CORE = ['./', './index.html', './manifest.webmanifest', './logo.jpg', './favicon.png']
+const CORE = ['./', './index.html', './manifest.webmanifest', './logo.png', './favicon.png']
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()).catch(() => {}))

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDb, uid } from '../store/db'
 import { useAuth } from '../store/auth'
-import { Card, Modal, Field, Select, Badge, Empty, useToast } from '../components/ui'
+import { Card, Modal, Field, Select, Badge, Empty, useToast, Menu } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import { AiTextArea } from '../components/AiTextArea'
 import { todayISO, fmtDate } from '../lib/date'
 import { visibleAnnouncements, personName, mosqueName, committeeName } from '../lib/selectors'
@@ -45,10 +46,13 @@ export default function Announcements({ scope }: { scope?: 'complex' }) {
 
   return (
     <div className="space-y-5">
-      <Card title="الإعلانات والرسائل"
-        subtitle="وجّه رسالتك للجميع أو للجنة أو لشخص بعينه"
-        action={canPublish && <button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ إعلان جديد</button>}
-        pad={false}>
+      <PageHeader
+        eyebrow={scope === 'complex' ? 'الإدارة العامة' : mosqueName(db, mid)}
+        title="الإعلانات والرسائل"
+        description="وجّه رسالتك لجميع منسوبي المجمع أو لمسجد أو للجنة أو لشخص بعينه، مع خيار تنسيق النص بمساعد ذكي قبل النشر."
+        actions={canPublish && <button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ إعلان جديد</button>}
+      />
+      <Card pad={false}>
         {list.length === 0 ? <Empty icon="📣" title="لا توجد إعلانات" /> : (
           <ul className="divide-y divide-line">
             {list.map((a) => (
@@ -73,10 +77,11 @@ export default function Announcements({ scope }: { scope?: 'complex' }) {
                     </p>
                   </div>
                   {(isDirector || a.createdBy === user?.id) && (
-                    <div className="flex gap-1.5 no-print">
-                      <button className="btn-ghost btn-sm" onClick={() => { setEditing(a); setOpen(true) }}>تعديل</button>
-                      <button className="btn-sm px-2 rounded-lg text-orange-600 hover:bg-orange-50" onClick={() => remove(a)}>حذف</button>
-                    </div>
+                    <Menu items={[
+                      { label: 'تعديل الإعلان', icon: '✎', onClick: () => { setEditing(a); setOpen(true) } },
+                      'sep',
+                      { label: 'حذف الإعلان', icon: '🗑', danger: true, onClick: () => remove(a) },
+                    ]} />
                   )}
                 </div>
               </li>

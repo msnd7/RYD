@@ -22,7 +22,7 @@ export default {
       },
       fontFamily: {
         sans: ['Thmanyah Sans', 'system-ui', 'Segoe UI', 'sans-serif'],
-        display: ['Thmanyah Display', 'Thmanyah Sans', 'system-ui', 'sans-serif'],
+        display: ['Thmanyah Head', 'Thmanyah Sans', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         soft: '0 1px 2px rgba(7,27,47,.04), 0 6px 20px -10px rgba(7,27,47,.16)',

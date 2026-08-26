@@ -14,7 +14,7 @@ const styles = grab(/<style[\s\S]*?<\/style>/g)
 const scripts = grab(/<script(?![^>]*\bsrc=)[\s\S]*?<\/script>/g)
 
 // شعار الصفحة الافتتاحية كـ data URI
-const logo = fs.readFileSync(path.join(path.dirname(src), 'logo.jpg')).toString('base64')
+const logo = fs.readFileSync(path.join(path.dirname(src), 'logo.png')).toString('base64')
 
 // ترميز المحارف غير اللاتينية داخل الجافاسكربت إلى \uXXXX
 // ليعمل الملف مهما كان ترميز الخادم المُضيف
@@ -38,7 +38,7 @@ ${styles}
   document.documentElement.setAttribute('dir','rtl');
   document.documentElement.setAttribute('lang','ar');
 </script>
-<div id="boot"><img src="data:image/jpeg;base64,${logo}" alt="${escapeHtml('رياض القرآن')}" /></div>
+<div id="boot"><img src="data:image/png;base64,${logo}" alt="${escapeHtml('رياض القرآن')}" /></div>
 <div id="root"></div>
 ${safeScripts}
 `

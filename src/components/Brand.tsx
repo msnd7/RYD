@@ -1,32 +1,31 @@
-import logo from '../assets/logo.jpg'
+import logo from '../assets/logo.png'
 
-/** الشعار الأصلي كما هو دون أي تعديل — يوضع دائمًا على خلفية بيضاء */
-export function LogoMark({ size = 44, rounded = 'rounded-2xl', pad = 'p-0', shadow = true }: {
-  size?: number; rounded?: string; pad?: string; shadow?: boolean
-}) {
+/**
+ * شعار مجمع رياض القرآن — بخلفية شفافة وبلا هوامش،
+ * يوضع مباشرة على الأسطح الفاتحة دون إطار أو مربع.
+ */
+export function LogoMark({ h = 34, className = '' }: { h?: number; className?: string }) {
   return (
-    <span
-      className={`inline-grid place-items-center bg-white ${rounded} ${pad} ${shadow ? 'shadow-soft' : ''} shrink-0`}
-      style={{ width: size, height: size }}
-    >
-      <img src={logo} alt="شعار رياض القرآن" className="w-full h-full object-contain" draggable={false} />
-    </span>
+    <img
+      src={logo}
+      alt="شعار رياض القرآن"
+      height={h}
+      style={{ height: h }}
+      className={`w-auto object-contain select-none shrink-0 ${className}`}
+      draggable={false}
+    />
   )
 }
 
-export function Wordmark({ light = false, size = 'md' }: { light?: boolean; size?: 'sm' | 'md' | 'lg' }) {
-  const dim = size === 'lg' ? 60 : size === 'sm' ? 38 : 46
+/** الشعار مع اسم المنصة — للقائمة الجانبية */
+export function Wordmark({ h = 38 }: { h?: number }) {
   return (
-    <div className="flex items-center gap-3 min-w-0">
-      <LogoMark size={dim} shadow={!light} />
-      <div className="leading-tight min-w-0">
-        <div className={`font-display font-extrabold truncate ${size === 'lg' ? 'text-[22px]' : size === 'sm' ? 'text-[15px]' : 'text-[18px]'} ${light ? 'text-white' : 'text-navy-800'}`}>
-          رياض القرآن
-        </div>
-        <div className={`font-bold truncate ${size === 'sm' ? 'text-[10px]' : 'text-[11px]'} ${light ? 'text-white/60' : 'text-orange-600'}`}>
-          منصة إدارة المجمع
-        </div>
-      </div>
+    <div className="flex items-center gap-2.5 min-w-0">
+      <LogoMark h={h} />
+      <span className="min-w-0 leading-tight border-r border-line pr-2.5">
+        <span className="block font-display font-bold text-[13.5px] text-navy-800 truncate">رياض القرآن</span>
+        <span className="block text-[10px] font-bold text-ink-400 truncate">منصة إدارة المجمع</span>
+      </span>
     </div>
   )
 }

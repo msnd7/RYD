@@ -38,7 +38,7 @@ export function Runtime() {
   return (
     <div className="no-print fixed bottom-[calc(70px+var(--safe-b))] lg:bottom-5 inset-x-3 lg:inset-x-auto lg:left-5 lg:w-[360px] z-[55] pop-in">
       <div className="panel p-4 flex items-center gap-3 shadow-lift">
-        <LogoMark size={48} rounded="rounded-lg" pad="p-0" shadow={false} />
+        <LogoMark h={38} />
         <div className="min-w-0 flex-1">
           <p className="text-[13.5px] font-extrabold">ثبّت التطبيق على جهازك</p>
           <p className="text-[11.5px] text-ink-500 leading-5">وصول أسرع وإشعارات بالمواعيد.</p>

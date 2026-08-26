@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDb } from '../store/db'
 import { useAuth } from '../store/auth'
-import { Card, Field, useToast, Empty, Badge, Modal, Tabs, Select } from '../components/ui'
+import { Card, Field, useToast, Empty, Badge, Modal, Tabs, Select, Menu } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import {
   canInstall, isStandalone, notificationPermission, notificationsSupported,
   onPwaChange, promptInstall, requestNotificationPermission, showNotification,
@@ -20,6 +21,11 @@ export default function ComplexSettings() {
 
   return (
     <div className="space-y-5">
+      <PageHeader
+        eyebrow="الإدارة العامة"
+        title="الإعدادات"
+        description="حسابات الدخول وإعادة تعيين الرموز، وسياسة الحضور والخصومات، وتثبيت التطبيق والإشعارات، والنسخ الاحتياطي."
+      />
       <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
         { value: 'accounts', label: 'الحسابات والدخول' },
         { value: 'policy', label: 'الهوية والسياسات' },

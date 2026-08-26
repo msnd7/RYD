@@ -1,4 +1,4 @@
-import type { DB, ID, Person, Task, Attendance } from '../types'
+import type { DB, ID, Person, Task, Attendance, Teacher } from '../types'
 import { todayISO, shiftDays, daysBetween, monthKey } from './date'
 
 export const personName = (db: DB, id?: ID) =>
@@ -112,3 +112,51 @@ export function attendanceByDay(rows: Attendance[], days: string[]) {
     }
   })
 }
+
+
+/* ================= المعلمون ================= */
+
+export const teachersOf = (db: DB, mosqueId: ID) =>
+  db.teachers.filter((t) => t.mosqueId === mosqueId && t.active)
+
+export const teacherName = (db: DB, id?: ID) =>
+  db.teachers.find((t) => t.id === id)?.name ?? '—'
+
+export function teacherStats(db: DB, teacherId: ID, from: string, to: string) {
+  const rows = db.teacherAttendance.filter(
+    (t) => t.teacherId === teacherId && t.date >= from && t.date <= to,
+  )
+  const present = rows.filter((r) => r.status === 'present').length
+  const absent = rows.filter((r) => r.status === 'absent').length
+  const excused = rows.filter((r) => r.status === 'excused').length
+  const late = rows.filter((r) => r.status === 'late').length
+  return {
+    rows, present, absent, excused, late, total: rows.length,
+    rate: rows.length ? Math.round(((present + late) / rows.length) * 100) : 0,
+  }
+}
+
+/** راتب المعلم بعد خصومات الغياب والاستئذان والتأخير */
+export function teacherPayroll(db: DB, teacher: Teacher, monthIso: string) {
+  const mk = monthKey(monthIso)
+  const rows = db.teacherAttendance.filter((t) => t.teacherId === teacher.id && t.date.startsWith(mk))
+  const absent = rows.filter((r) => r.status === 'absent').length
+  const excused = rows.filter((r) => r.status === 'excused').length
+  const late = rows.filter((r) => r.status === 'late').length
+  const dayValue = (teacher.salary || 0) / (db.settings.workDaysPerMonth || 26)
+  const deductionDays =
+    absent * db.settings.absentDeductionDays +
+    excused * db.settings.excusedDeductionDays +
+    late * (db.settings.lateDeductionDays ?? 0)
+  const deduction = Math.round(dayValue * deductionDays)
+  return {
+    absent, excused, late, deductionDays,
+    dayValue: Math.round(dayValue), deduction,
+    net: Math.max(0, (teacher.salary || 0) - deduction),
+  }
+}
+
+/* ================= العهد ================= */
+
+export const custodiesOfCommittee = (db: DB, committeeId: ID) =>
+  db.custodies.filter((c) => c.committeeId === committeeId)

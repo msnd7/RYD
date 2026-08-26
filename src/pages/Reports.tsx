@@ -4,9 +4,10 @@ import { useDb, uid } from '../store/db'
 import { useAuth } from '../store/auth'
 import {
   Card, Modal, Field, Select, Badge, Empty, useToast, Stat, Tabs,
-  FileDrop, FileChips, Progress, PrintBar,
+  FileDrop, FileChips, Progress, PrintBar, Menu,
 } from '../components/ui'
 import { AiTextArea } from '../components/AiTextArea'
+import { PageHeader } from '../components/PageHeader'
 import { ReportHeader, ReportFooter } from '../components/ReportShell'
 import { Donut, SplitBar, BarChart, C } from '../components/charts'
 import { todayISO, shiftDays, fmtDate, dueLabel } from '../lib/date'
@@ -25,6 +26,11 @@ export default function Reports({ scope }: { scope?: 'complex' }) {
 
   return (
     <div className="space-y-5">
+      <PageHeader
+        eyebrow={isComplex ? 'الإدارة العامة' : undefined}
+        title="التقارير"
+        description="تقارير جاهزة للطباعة أو الحفظ PDF — للشخص واللجنة والمسجد، إضافة إلى رفع التقارير الأسبوعية والشهرية بشواهدها."
+      />
       <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
         { value: 'person', label: 'تقرير شخص' },
         { value: 'committee', label: 'تقرير لجنة' },
@@ -401,11 +407,14 @@ function Uploads({ mid, isComplex }: { mid: string; isComplex: boolean }) {
                 <div className="flex gap-1.5 no-print">
                   <button className="btn-ghost btn-sm" onClick={() => setView(r)}>عرض وطباعة</button>
                   {(isDirector || r.createdBy === user?.id) && (
-                    <button className="btn-sm px-2 rounded-lg text-orange-600 hover:bg-orange-50" onClick={() => {
-                      if (!confirm('حذف التقرير؟')) return
-                      set((d) => { d.reports = d.reports.filter((x) => x.id !== r.id) })
-                      toast('تم الحذف', 'info')
-                    }}>حذف</button>
+                    <Menu items={[{
+                      label: 'حذف التقرير', icon: '🗑', danger: true,
+                      onClick: () => {
+                        if (!confirm('حذف التقرير؟')) return
+                        set((d) => { d.reports = d.reports.filter((x) => x.id !== r.id) })
+                        toast('تم الحذف', 'info')
+                      },
+                    }]} />
                   )}
                 </div>
               </li>

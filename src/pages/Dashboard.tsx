@@ -1,7 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
 import { useDb } from '../store/db'
 import { useAuth } from '../store/auth'
-import { Card, Stat, Progress, Badge, Empty } from '../components/ui'
+import { Card, Progress, Badge, Empty, StatStrip } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import { ActionInbox } from '../components/ActionInbox'
 import { BarChart, Donut, SplitBar, C } from '../components/charts'
 import { todayISO, shiftDays, fmtDate, dueLabel } from '../lib/date'
@@ -47,14 +48,20 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat tone="brand" label="حضور اليوم" value={`${presentToday}/${staff.length}`}
-          hint={notCheckedIn.length ? `${notCheckedIn.length} لم يحضّروا بعد` : 'اكتمل الحضور'} />
-        <Stat tone="olive" label="نسبة الحضور (٣٠ يومًا)" value={staff.length ? `${rate}%` : '—'} hint="لفريق العمل" />
-        <Stat tone={tc.total - tc.done > 0 ? 'gold' : 'slate'} label="مهام مفتوحة"
-          value={tc.total - tc.done} hint={tc.late ? `${tc.late} متأخرة` : 'لا توجد متأخرات'} />
-        <Stat tone={tc.stuck ? 'rose' : 'slate'} label="مهام متعثرة" value={tc.stuck} hint="تحتاج تدخّلًا" />
-      </div>
+      <PageHeader
+        eyebrow={mosque?.name}
+        title="لوحة المعلومات"
+        description="ملخّص يومي لحضور فريق المسجد ومعلميه وحالة المهام واللجان — والمالية لها صفحتها المستقلة."
+      />
+
+      <StatStrip items={[
+        { label: 'حضور اليوم', value: `${presentToday}/${staff.length}`,
+          hint: notCheckedIn.length ? `${notCheckedIn.length} لم يحضّروا بعد` : 'اكتمل الحضور' },
+        { label: 'نسبة الحضور', value: staff.length ? `${rate}%` : '—', hint: 'آخر ٣٠ يومًا' },
+        { label: 'المعلمون', value: teachers.length, hint: `${teacherToday.length} رُصد اليوم` },
+        { label: 'مهام مفتوحة', value: tc.total - tc.done, hint: tc.late ? `${tc.late} متأخرة` : 'لا توجد متأخرات' },
+        { label: 'مهام متعثرة', value: tc.stuck, hint: 'تحتاج تدخّلًا', accent: tc.stuck > 0 },
+      ]} />
 
       <div className="grid lg:grid-cols-3 gap-5">
         <Card title="حركة الحضور — آخر ١٤ يومًا" className="lg:col-span-2"
@@ -80,7 +87,7 @@ export default function Dashboard() {
           </div></>)}
         </Card>
 
-        <Card title="حالة المهام">
+        <Card title="حالة البنود">
           <div className="flex flex-col items-center">
             <Donut value={tc.total ? Math.round((tc.done / tc.total) * 100) : 0}
               tone={C.olive} sub={`${tc.done} من ${tc.total}`} />
@@ -154,11 +161,18 @@ export default function Dashboard() {
               <Empty icon="📚" title="لم يُسجّل حضور المعلمين اليوم"
                 hint={`${teachers.length} معلمًا بانتظار التحضير`} />
             ) : (
-              <div className="grid grid-cols-2 gap-2.5">
-                <Stat label="حاضر" value={teacherToday.filter((t) => t.status === 'present').length} tone="olive" />
-                <Stat label="غائب" value={teacherToday.filter((t) => t.status === 'absent').length} tone={teacherToday.some((t) => t.status === 'absent') ? 'rose' : 'slate'} />
-                <Stat label="متأخر" value={teacherToday.filter((t) => t.status === 'late').length} />
-                <Stat label="مستأذن" value={teacherToday.filter((t) => t.status === 'excused').length} />
+              <div className="grid grid-cols-2 gap-px bg-line rounded-xl overflow-hidden border border-line">
+                {([
+                  ['حاضر', 'present'], ['غائب', 'absent'], ['متأخر', 'late'], ['مستأذن', 'excused'],
+                ] as const).map(([label, key]) => {
+                  const n = teacherToday.filter((t) => t.status === key).length
+                  return (
+                    <div key={key} className={`px-3 py-2.5 ${key === 'absent' && n > 0 ? 'bg-orange-50' : 'bg-white'}`}>
+                      <p className="text-[11px] font-bold text-ink-500">{label}</p>
+                      <p className={`num text-[18px] mt-1 ${key === 'absent' && n > 0 ? 'text-orange-700' : 'text-navy-800'}`}>{n}</p>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </Card>

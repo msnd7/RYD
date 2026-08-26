@@ -43,14 +43,14 @@ export default function ChangePassword() {
 
   return (
     <div className="min-h-[100dvh] grid place-items-center px-5 py-10
-      bg-gradient-to-b from-navy-800 via-navy-900 to-navy-950">
+      bg-gradient-to-b from-white via-navy-50 to-navy-100/60">
       <div className="w-full max-w-[420px]">
         <div className="flex flex-col items-center text-center mb-7">
-          <LogoMark size={88} rounded="rounded-[22px]" pad="p-0" />
-          <h1 className="mt-4 font-display font-extrabold text-[22px] text-white">
+          <LogoMark h={96} />
+          <h1 className="mt-5 font-display font-bold text-[21px] text-navy-900">
             {mustChangePassword ? 'تعيين رمز دخول خاص بك' : 'تغيير رمز الدخول'}
           </h1>
-          <p className="text-[12.5px] text-white/60 mt-2 leading-6 max-w-[320px]">
+          <p className="text-[12.5px] text-ink-500 mt-2 leading-6 max-w-[330px]">
             {mustChangePassword
               ? 'لحماية حسابك، غيّر الرمز المبدئي إلى رمز تعرفه أنت وحدك قبل الدخول للمنصة.'
               : 'اختر رمزًا جديدًا لحسابك.'}

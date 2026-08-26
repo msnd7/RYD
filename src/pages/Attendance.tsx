@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDb, uid } from '../store/db'
 import { useAuth } from '../store/auth'
-import { Card, Stat, Badge, Modal, Field, Empty, Tabs, useToast, Progress, Select } from '../components/ui'
+import { Card, Badge, Modal, Field, Empty, Tabs, useToast, Progress, Select, StatStrip } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import { Donut, BarChart, SplitBar, C } from '../components/charts'
 import { distanceMeters, getPosition } from '../lib/geo'
 import { todayISO, shiftDays, fmtDate, fmtDayName, fmtTime } from '../lib/date'
-import { staffOf, attendanceStats, personName, lastNDays, attendanceByDay, payrollFor, mosqueName } from '../lib/selectors'
+import { staffOf, attendanceStats, personName, teacherName, lastNDays, attendanceByDay, payrollFor, mosqueName } from '../lib/selectors'
 import type { AttStatus } from '../types'
 
 const ST: Record<AttStatus, { label: string; tone: string }> = {
@@ -34,6 +35,11 @@ export default function Attendance({ scope }: { scope?: 'complex' }) {
 
   return (
     <div className="space-y-5">
+      <PageHeader
+        eyebrow={isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
+        title="الحضور والتحضير"
+        description="يحضّر كل إداري نفسه من حسابه داخل نطاق المسجد، ويعتمد المدير طلبات الاستئذان — والغياب يُخصم يومًا كاملًا والاستئذان نصف يوم."
+      />
       <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
         { value: 'me', label: 'تحضيري' },
         ...(canManage ? [{ value: 'team' as const, label: 'حضور الفريق' }] : []),
@@ -130,7 +136,7 @@ function MyAttendance({ mosqueId, onLeave }: { mosqueId: string; onLeave: () => 
               <button className="btn-primary" onClick={checkIn} disabled={busy || mine?.status === 'present'}>
                 {busy ? '⏳ جارٍ تحديد موقعك…' : mine?.status === 'present' ? '✅ تم تحضيرك اليوم' : '📍 تحضير نفسي الآن'}
               </button>
-              <button className="btn-gold" onClick={onLeave}>📝 رفع طلب استئذان</button>
+              <button className="btn-accent" onClick={onLeave}>📝 رفع طلب استئذان</button>
             </div>
 
             {msg && (
@@ -159,10 +165,13 @@ function MyAttendance({ mosqueId, onLeave }: { mosqueId: string; onLeave: () => 
           <div className="flex justify-center">
             <Donut value={st.rate} tone={st.rate >= 85 ? C.olive : st.rate >= 70 ? C.gold : C.rose} sub="نسبة الحضور" />
           </div>
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            <Stat label="حضور" value={st.present} tone="olive" />
-            <Stat label="غياب" value={st.absent} tone={st.absent ? 'rose' : 'slate'} />
-            <Stat label="استئذان" value={st.excused} tone="gold" />
+          <div className="grid grid-cols-3 gap-px bg-line border border-line rounded-xl overflow-hidden mt-4">
+            {([['حضور', st.present, false], ['غياب', st.absent, st.absent > 0], ['استئذان', st.excused, false]] as const).map(([l, v, hot]) => (
+              <div key={l} className={`px-3 py-2.5 text-center ${hot ? 'bg-orange-50' : 'bg-white'}`}>
+                <p className={`num text-[18px] ${hot ? 'text-orange-700' : 'text-navy-800'}`}>{v}</p>
+                <p className="text-[10.5px] font-bold text-ink-400 mt-0.5">{l}</p>
+              </div>
+            ))}
           </div>
         </Card>
 
@@ -230,14 +239,14 @@ function TeamAttendance({ mid, isComplex, filter }: { mid: string; isComplex: bo
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat label="فريق العمل" value={staff.length} tone="brand" />
-        <Stat label="حاضر" value={present} tone="olive" />
-        <Stat label="مستأذن" value={excused} tone="gold" />
-        <Stat label="غائب" value={absent} tone={absent ? 'rose' : 'slate'} />
-      </div>
+      <StatStrip items={[
+        { label: 'الإداريون', value: staff.length },
+        { label: 'حاضر', value: present },
+        { label: 'مستأذن', value: excused },
+        { label: 'غائب', value: absent, accent: absent > 0 },
+      ]} />
 
-      <Card title="كشف الحضور اليومي" subtitle={`${fmtDayName(date)} · ${fmtDate(date)}`} pad={false}
+      <Card title="كشف حضور الإداريين" subtitle={`${fmtDayName(date)} · ${fmtDate(date)}`} pad={false}
         action={<div className="flex flex-wrap gap-2 items-center">
           {filter}
           <input type="date" className="field !py-2 !text-[13px] w-auto" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -319,15 +328,26 @@ function Leaves({ mid, onNew }: { mid: string; onNew: () => void }) {
 
   const canDecide = isDirector
   let rows = mid ? db.leaves.filter((l) => l.mosqueId === mid) : db.leaves
-  if (user!.role === 'member') rows = rows.filter((l) => l.personId === user!.id)
+  if (user!.role === 'member') rows = rows.filter((l) => l.personType !== 'teacher' && l.personId === user!.id)
   rows = [...rows].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+
+  const subjectName = (l: { personType?: 'staff' | 'teacher'; personId: string }) =>
+    l.personType === 'teacher' ? teacherName(db, l.personId) : personName(db, l.personId)
 
   const decide = (id: string, status: 'approved' | 'rejected') => {
     const l = db.leaves.find((x) => x.id === id)!
     set((d) => {
       const lv = d.leaves.find((x) => x.id === id)!
       lv.status = status; lv.decidedBy = user!.id; lv.decidedAt = todayISO()
-      if (status === 'approved') {
+      if (status !== 'approved') return
+      if (lv.personType === 'teacher') {
+        const ex = d.teacherAttendance.find((a) => a.teacherId === lv.personId && a.date === lv.date)
+        if (ex) { ex.status = 'excused'; ex.note = lv.reason }
+        else d.teacherAttendance.push({
+          id: uid('ta'), mosqueId: lv.mosqueId, teacherId: lv.personId,
+          date: lv.date, status: 'excused', note: lv.reason,
+        })
+      } else {
         const ex = d.attendance.find((a) => a.personId === lv.personId && a.date === lv.date)
         if (ex) { ex.status = 'excused'; ex.source = 'system' }
         else d.attendance.push({
@@ -337,20 +357,23 @@ function Leaves({ mid, onNew }: { mid: string; onNew: () => void }) {
       }
     })
     toast(status === 'approved'
-      ? `تم اعتماد استئذان ${personName(db, l.personId)} — يُخصم نصف يوم`
+      ? `تم اعتماد استئذان ${subjectName(l)} — يُخصم نصف يوم`
       : 'تم رفض الطلب', status === 'approved' ? 'ok' : 'info')
   }
 
   return (
-    <Card title="طلبات الاستئذان" subtitle="الاستئذان المعتمد يُخصم منه نصف يوم فقط بدل يوم كامل"
-      action={<button className="btn-gold btn-sm" onClick={onNew}>＋ طلب استئذان</button>} pad={false}>
+    <Card title="طلبات الاستئذان" subtitle="للإداريين والمعلمين — المعتمد يُخصم منه نصف يوم بدل يوم كامل"
+      action={<button className="btn-accent btn-sm" onClick={onNew}>＋ طلب استئذان</button>} pad={false}>
       {rows.length === 0 ? <Empty icon="📝" title="لا توجد طلبات" /> : (
         <ul className="divide-y divide-line">
           {rows.map((l) => (
             <li key={l.id} className="px-5 py-4 flex flex-wrap items-center gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-extrabold text-[14px]">{personName(db, l.personId)}</span>
+                  <span className="font-extrabold text-[14px]">{subjectName(l)}</span>
+                  <Badge tone={l.personType === 'teacher' ? 'purple' : 'mute'}>
+                    {l.personType === 'teacher' ? 'معلم' : 'إداري'}
+                  </Badge>
                   <Badge tone={l.status === 'approved' ? 'ok' : l.status === 'rejected' ? 'bad' : 'warn'}>
                     {l.status === 'approved' ? 'معتمد' : l.status === 'rejected' ? 'مرفوض' : 'بانتظار الاعتماد'}
                   </Badge>
@@ -364,7 +387,7 @@ function Leaves({ mid, onNew }: { mid: string; onNew: () => void }) {
               </div>
               {canDecide && l.status === 'pending' && (
                 <div className="flex gap-2 no-print">
-                  <button className="btn-olive btn-sm" onClick={() => decide(l.id, 'approved')}>اعتماد</button>
+                  <button className="btn-primary btn-sm" onClick={() => decide(l.id, 'approved')}>اعتماد</button>
                   <button className="btn-ghost btn-sm" onClick={() => decide(l.id, 'rejected')}>رفض</button>
                 </div>
               )}
@@ -386,7 +409,8 @@ function LeaveModal({ open, onClose, mosqueId }: { open: boolean; onClose: () =>
   const save = () => {
     if (!reason.trim()) return toast('اكتب سبب الاستئذان.', 'bad')
     set((d) => d.leaves.push({
-      id: uid('l'), mosqueId: mosqueId || (user!.mosqueId as string), personId: user!.id,
+      id: uid('l'), mosqueId: mosqueId || (user!.mosqueId as string),
+      personType: 'staff', personId: user!.id,
       date, reason: reason.trim(), status: 'pending', createdAt: todayISO(),
     }))
     toast('تم رفع الطلب لمدير المجمع للاعتماد')

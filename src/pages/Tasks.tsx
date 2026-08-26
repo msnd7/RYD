@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDb, uid } from '../store/db'
 import { useAuth } from '../store/auth'
-import { Card, Modal, Field, Select, Badge, Empty, Tabs, useToast, Stat } from '../components/ui'
+import { Card, Modal, Field, Select, Badge, Empty, Tabs, useToast, StatStrip, Menu } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import { AiTextArea } from '../components/AiTextArea'
 import { todayISO, fmtDate, dueLabel, shiftDays } from '../lib/date'
 import { committeesOf, staffOf, personName, committeeName, taskCounts, mosqueName } from '../lib/selectors'
@@ -68,20 +69,22 @@ export default function Tasks({ scope }: { scope?: 'complex' }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <Stat label="الإجمالي" value={tc.total} tone="brand" />
-        <Stat label="منجز" value={tc.done} tone="olive" />
-        <Stat label="قيد التنفيذ" value={tc.pending} />
-        <Stat label="متعثر" value={tc.stuck} tone={tc.stuck ? 'rose' : 'slate'} />
-        <Stat label="مؤجل / متأخر" value={`${tc.postponed} / ${tc.late}`} tone="gold" />
-      </div>
-
-      <Card
+      <PageHeader
+        eyebrow={isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
         title="المهام والقرارات والتوصيات"
-        subtitle="اكتب البند وستظهر لجنته والمسؤول عنه تلقائيًا"
-        action={<button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ بند جديد</button>}
-        pad={false}
-      >
+        description="اختر المسؤول فتظهر لجنته تلقائيًا، وحدّد النوع والحالة والتاريخ ومدة التنبيه — وسيصلك تذكير قبل الموعد."
+        actions={<button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ بند جديد</button>}
+      />
+
+      <StatStrip items={[
+        { label: 'الإجمالي', value: tc.total },
+        { label: 'منجز', value: tc.done },
+        { label: 'قيد التنفيذ', value: tc.pending },
+        { label: 'مؤجل', value: tc.postponed },
+        { label: 'متعثر أو متأخر', value: tc.stuck + tc.late, hint: `${tc.stuck} متعثر · ${tc.late} متأخر`, accent: tc.stuck + tc.late > 0 },
+      ]} />
+
+      <Card pad={false}>
         <div className="px-5 py-4 space-y-3 no-print">
           <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
             { value: 'all', label: 'الكل', count: tc.total },
@@ -149,12 +152,12 @@ export default function Tasks({ scope }: { scope?: 'complex' }) {
                         {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                       </select>
                       {canEdit && (
-                        <>
-                          <button className="btn-ghost btn-sm" onClick={() => { setEditing(t); setOpen(true) }}>تعديل</button>
-                          {(isDirector || t.createdBy === user?.id) && (
-                            <button className="btn-sm text-orange-600 hover:bg-orange-50 rounded-lg px-2" onClick={() => remove(t.id)}>حذف</button>
-                          )}
-                        </>
+                        <Menu items={[
+                          { label: 'تعديل البند', icon: '✎', onClick: () => { setEditing(t); setOpen(true) } },
+                          ...(isDirector || t.createdBy === user?.id
+                            ? ['sep' as const, { label: 'حذف البند', icon: '🗑', danger: true, onClick: () => remove(t.id) }]
+                            : []),
+                        ]} />
                       )}
                     </div>
                   </div>

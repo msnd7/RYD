@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useDb } from '../store/db'
-import { Card, Stat, Progress, Badge, Empty } from '../components/ui'
+import { Card, Progress, Badge, StatStrip } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import { ActionInbox } from '../components/ActionInbox'
 import { BarChart, SplitBar, Donut, C } from '../components/charts'
 import { todayISO, shiftDays, fmtDate } from '../lib/date'
@@ -35,20 +36,27 @@ export default function ComplexDashboard() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat tone="brand" label="إجمالي فريق العمل" value={rows.reduce((s, r) => s + r.staff.length, 0)} />
-        <Stat tone="olive" label="إجمالي المعلمين" value={rows.reduce((s, r) => s + r.teachers.length, 0)} />
-        <Stat tone="gold" label="بنود مفتوحة" value={allTc.total - allTc.done} hint={`${allTc.late} متأخرة`} />
-        <Stat tone={allTc.stuck ? 'rose' : 'slate'} label="بنود متعثرة" value={allTc.stuck} />
-      </div>
+      <PageHeader
+        eyebrow="الإدارة العامة"
+        title="لوحة المجمع"
+        description="مقارنة المساجد الثلاثة جنبًا إلى جنب في الحضور والإنجاز والمصروف، مع ما ينتظر قرارك."
+      />
+
+      <StatStrip items={[
+        { label: 'الإداريون', value: rows.reduce((s, r) => s + r.staff.length, 0) },
+        { label: 'المعلمون', value: rows.reduce((s, r) => s + r.teachers.length, 0) },
+        { label: 'بنود مفتوحة', value: allTc.total - allTc.done },
+        { label: 'متأخرة', value: allTc.late },
+        { label: 'متعثرة', value: allTc.stuck, accent: allTc.stuck > 0 },
+      ]} />
 
       <Card title="مقارنة المساجد" subtitle="نظرة واحدة تكشف الفروق بين المساجد الثلاثة" pad={false}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-navy-50"><tr>
               <th className="th">المسجد</th><th className="th">المشرف</th>
-              <th className="th">الفريق</th><th className="th">المعلمون</th>
-              <th className="th">حضور الفريق</th><th className="th">حضور المعلمين</th>
+              <th className="th">الإداريون</th><th className="th">المعلمون</th>
+              <th className="th">حضور الإداريين</th><th className="th">حضور المعلمين</th>
               <th className="th">إنجاز المهام</th><th className="th">المصروف</th><th className="th no-print"></th>
             </tr></thead>
             <tbody>

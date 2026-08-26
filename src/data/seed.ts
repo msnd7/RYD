@@ -60,7 +60,7 @@ export function buildSeed(): DB {
   ]
 
   return {
-    version: 2,
+    version: 3,
     settings: {
       complexName: 'مجمع رياض القرآن',
       complexSubtitle: 'حلقات تحفيظ القرآن الكريم — مدينة الملك سعود السكنية بديراب',
@@ -70,6 +70,7 @@ export function buildSeed(): DB {
       reminderSeconds: 10,
       defaultPassword: DEFAULT_PASSWORD,
       pushEnabled: false,
+      lateDeductionDays: 0,
     },
     mosques,
     committees,

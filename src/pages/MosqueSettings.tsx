@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useDb } from '../store/db'
 import { useAuth } from '../store/auth'
 import { Card, Field, Select, useToast, Empty, Badge } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import { getPosition, distanceMeters } from '../lib/geo'
 import { staffOf } from '../lib/selectors'
 
@@ -52,6 +53,11 @@ export default function MosqueSettings() {
 
   return (
     <div className="space-y-5 max-w-3xl">
+      <PageHeader
+        eyebrow={m.name}
+        title="إعدادات المسجد"
+        description="بيانات المسجد ومشرفه، والنطاق المكاني الذي لا يُقبل التحضير خارجه."
+      />
       <Card title="بيانات المسجد">
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="اسم المسجد" required>

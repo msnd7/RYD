@@ -90,6 +90,8 @@ export type LeaveStatus = 'pending' | 'approved' | 'rejected'
 export interface LeaveRequest {
   id: ID
   mosqueId: ID
+  /** staff = إداري له حساب، teacher = معلم يرفع له المشرف الطلب */
+  personType: 'staff' | 'teacher'
   personId: ID
   date: string
   reason: string
@@ -182,17 +184,21 @@ export interface Teacher {
   circle: string        // الحلقة
   level: string
   studentsCount: number
+  salary: number        // الراتب الشهري — أساس احتساب خصومات الغياب والاستئذان
   active: boolean
   notes: string
+  hiredAt?: string
   evaluation?: { score: number; note: string; at: string }
 }
+
+export type TeacherAttStatus = 'present' | 'absent' | 'late' | 'excused'
 
 export interface TeacherAttendance {
   id: ID
   mosqueId: ID
   teacherId: ID
   date: string
-  status: 'present' | 'absent' | 'late' | 'excused'
+  status: TeacherAttStatus
   note?: string
 }
 
@@ -205,6 +211,7 @@ export interface Settings {
   reminderSeconds: number       // مدة ظهور إشعار الدخول
   defaultPassword: string       // الرمز المبدئي عند الإضافة أو إعادة التعيين
   pushEnabled: boolean          // تفعيل إشعارات التذكير على الجهاز
+  lateDeductionDays: number     // خصم التأخير للمعلم (بالأيام)
 }
 
 export interface DB {

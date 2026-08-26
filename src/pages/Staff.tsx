@@ -1,9 +1,10 @@
-import logoSrc from '../assets/logo.jpg'
+import logoSrc from '../assets/logo.png'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDb, uid } from '../store/db'
 import { useAuth, normEmail } from '../store/auth'
-import { Card, Modal, Field, Select, Badge, Empty, useToast, Stat, PrintBar } from '../components/ui'
+import { Card, Modal, Field, Select, Badge, Empty, useToast, StatStrip, PrintBar, Menu } from '../components/ui'
+import { PageHeader } from '../components/PageHeader'
 import { SignaturePad } from '../components/SignaturePad'
 import { todayISO, shiftDays, fmtDate } from '../lib/date'
 import { staffOf, committeesOf, attendanceStats, payrollFor, mosqueName, committeeName } from '../lib/selectors'
@@ -57,34 +58,36 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat label="عدد العاملين" value={list.length} tone="brand" />
-        <Stat label="مشرفو المساجد" value={list.filter((p) => p.role === 'supervisor').length} tone="olive" />
-        <Stat label="عقود موقّعة" value={list.filter((p) => p.contract?.signedAt).length} tone="gold" />
-        <Stat label="لم يغيّروا الرمز" value={list.filter((p) => p.mustChangePassword).length}
-          tone={list.some((p) => p.mustChangePassword) ? 'rose' : 'slate'} />
-      </div>
-
-      <Card
-        title={isComplex ? 'العاملون في المجمع' : 'فريق عمل المسجد'}
-        subtitle={isComplex
-          ? 'أضف مشرفي المساجد هنا، ثم يتولّى كل مشرف إضافة فريق مسجده'
-          : 'أضف أعضاء فريق العمل وسكّنهم في اللجان'}
-        action={
-          <div className="flex flex-wrap gap-2 items-center">
+      <PageHeader
+        eyebrow={isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
+        title="الإداريون"
+        description={isComplex
+          ? 'أضف مشرف كل مسجد ببريده الإلكتروني، ثم يتولّى كل مشرف إضافة إداريي مسجده. لكل إداري حساب يدخل به ويحضّر نفسه.'
+          : 'أضف إداريي المسجد وسكّنهم في اللجان. لكل إداري حساب يدخل به ويحضّر نفسه داخل نطاق المسجد.'}
+        actions={
+          <>
             {isComplex && (
               <Select value={fMosque} onChange={setFMosque} placeholder="كل المساجد"
                 options={db.mosques.map((m) => ({ value: m.id, label: m.shortName }))} />
             )}
             {canAdd && (
               <button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>
-                ＋ {isComplex ? 'إضافة مشرف أو عامل' : 'إضافة عضو'}
+                ＋ {isComplex ? 'إضافة مشرف أو إداري' : 'إضافة إداري'}
               </button>
             )}
-          </div>
+          </>
         }
-        pad={false}
-      >
+      />
+
+      <StatStrip items={[
+        { label: 'عدد الإداريين', value: list.length },
+        { label: 'مشرفو المساجد', value: list.filter((p) => p.role === 'supervisor').length },
+        { label: 'عقود موقّعة', value: list.filter((p) => p.contract?.signedAt).length, hint: `من ${list.length}` },
+        { label: 'لم يغيّروا الرمز', value: list.filter((p) => p.mustChangePassword).length,
+          accent: list.some((p) => p.mustChangePassword) },
+      ]} />
+
+      <Card pad={false}>
         {list.length > 0 && (
           <div className="px-4 sm:px-5 py-3 no-print">
             <input className="field" placeholder="بحث بالاسم أو البريد أو الوظيفة…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -162,16 +165,15 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
                             : <Badge tone="ok">مفعّل</Badge>}
                         </td>
                         <td className="td no-print">
-                          <div className="flex gap-1">
-                            <button className="btn-ghost btn-sm" onClick={() => setContractFor(p)}>العقد</button>
-                            {canEditRow(p) && <button className="btn-ghost btn-sm" onClick={() => { setEditing(p); setOpen(true) }}>تعديل</button>}
-                            {isDirector && (
-                              <>
-                                <button className="btn-ghost btn-sm" onClick={() => resetPassword(p)}>تعيين الرمز</button>
-                                <button className="btn-sm px-2 rounded-lg text-orange-700 hover:bg-orange-50 font-bold" onClick={() => stop(p)}>إيقاف</button>
-                              </>
-                            )}
-                          </div>
+                          <Menu items={[
+                            { label: 'عرض العقد', icon: '📄', onClick: () => setContractFor(p) },
+                            ...(canEditRow(p) ? [{ label: 'تعديل البيانات', icon: '✎', onClick: () => { setEditing(p); setOpen(true) } }] : []),
+                            ...(isDirector ? [
+                              { label: 'إعادة تعيين الرمز', icon: '🔑', onClick: () => resetPassword(p) },
+                              'sep' as const,
+                              { label: 'إيقاف الحساب', icon: '⏻', danger: true, onClick: () => stop(p) },
+                            ] : []),
+                          ]} />
                         </td>
                       </tr>
                     )
@@ -204,14 +206,15 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
                           {p.salary > 0 && <> · الراتب: <b className="text-ink-900">{money(p.salary)}</b></>}
                         </p>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 mt-3 no-print">
-                      <button className="btn-ghost btn-sm" onClick={() => setContractFor(p)}>العقد</button>
-                      {canEditRow(p) && <button className="btn-ghost btn-sm" onClick={() => { setEditing(p); setOpen(true) }}>تعديل</button>}
-                      {isDirector && <>
-                        <button className="btn-ghost btn-sm" onClick={() => resetPassword(p)}>تعيين الرمز</button>
-                        <button className="btn-sm px-2.5 rounded-lg text-orange-700 hover:bg-orange-50 font-bold" onClick={() => stop(p)}>إيقاف</button>
-                      </>}
+                      <Menu items={[
+                        { label: 'عرض العقد', icon: '📄', onClick: () => setContractFor(p) },
+                        ...(canEditRow(p) ? [{ label: 'تعديل البيانات', icon: '✎', onClick: () => { setEditing(p); setOpen(true) } }] : []),
+                        ...(isDirector ? [
+                          { label: 'إعادة تعيين الرمز', icon: '🔑', onClick: () => resetPassword(p) },
+                          'sep' as const,
+                          { label: 'إيقاف الحساب', icon: '⏻', danger: true, onClick: () => stop(p) },
+                        ] : []),
+                      ]} />
                     </div>
                   </li>
                 )
@@ -459,7 +462,7 @@ function ContractModal({ person, onClose }: { person: Person | null; onClose: ()
       <div id="print-area">
         <div className="border border-line rounded-2xl p-5 sm:p-6">
           <header className="text-center border-b border-line pb-4">
-            <img src={logoSrc} alt="" className="w-14 h-14 object-contain mx-auto" />
+            <img src={logoSrc} alt="" style={{ height: 54 }} className="w-auto object-contain mx-auto" />
             <h2 className="font-display font-black text-[19px] text-navy-800 mt-2">{db.settings.complexName}</h2>
             <p className="text-[11.5px] text-ink-500 mt-1">{db.settings.complexSubtitle}</p>
             <h3 className="mt-3 font-extrabold text-[16px]">{c?.title ?? 'عقد عمل'}</h3>

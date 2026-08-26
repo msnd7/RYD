@@ -4,14 +4,16 @@ import { useDb, uid } from '../store/db'
 import { useAuth } from '../store/auth'
 import {
   Card, Modal, Field, Select, Badge, Empty, useToast, Stat, Tabs,
-  FileDrop, FileChips, Progress, PrintBar,
+  FileDrop, FileChips, Progress, PrintBar, Menu, StatStrip,
 } from '../components/ui'
 import { ReportHeader, ReportFooter } from '../components/ReportShell'
+import { PageHeader } from '../components/PageHeader'
+import { CustodyRequestModal } from '../components/CustodyRequestModal'
 import { SplitBar, C } from '../components/charts'
 import { todayISO, fmtDate, daysBetween } from '../lib/date'
 import {
   staffOf, committeesOf, personName, committeeName, mosqueName,
-  custodyBalance, payrollFor,
+  custodyBalance, payrollFor, teachersOf, teacherPayroll,
 } from '../lib/selectors'
 import type { Custody, UploadedFile } from '../types'
 
@@ -44,17 +46,24 @@ export default function Finance({ scope }: { scope?: 'complex' }) {
   const mosqueId = isComplex ? fMosque : mid
 
   return (
-    <div className="space-y-5">
+    <div>
+      <PageHeader
+        eyebrow={isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
+        title="الإدارة المالية"
+        description="طلبات صرف العهد واعتمادها، وتسجيل المصروفات بفواتيرها، وإقفال العهد وإعادة المتبقي، ورواتب الإداريين والمعلمين بعد خصومات الحضور."
+      />
       <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
         { value: 'custody', label: 'العهد والمصروفات' },
         { value: 'payroll', label: 'الرواتب والخصومات' },
         { value: 'report', label: 'التقرير المالي' },
       ]} />
+      <div className="mt-4">
       {tab === 'custody' && <Custodies mosqueId={mosqueId} isComplex={isComplex}
         filter={isComplex ? <Select value={fMosque} onChange={setFMosque} placeholder="كل المساجد"
           options={db.mosques.map((m) => ({ value: m.id, label: m.name }))} /> : null} />}
       {tab === 'payroll' && <Payroll mosqueId={mosqueId} isComplex={isComplex} />}
       {tab === 'report' && <FinanceReport mosqueId={mosqueId} isComplex={isComplex} />}
+      </div>
     </div>
   )
 }
@@ -95,16 +104,18 @@ function Custodies({ mosqueId, isComplex, filter }: {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat label="إجمالي المصروف" value={money(totals.granted)} tone="brand" />
-        <Stat label="المنصرف بفواتير" value={money(totals.spent)} tone="olive" />
-        <Stat label="عهد مفتوحة" value={money(totals.open)} tone="gold" hint={`${list.filter((c) => c.status === 'approved').length} عهدة`} />
-        <Stat label="مبالغ مُعادة" value={money(totals.returned)} />
-      </div>
+      <StatStrip items={[
+        { label: 'إجمالي العهد المصروفة', value: money(totals.granted) },
+        { label: 'المنصرف بفواتير', value: money(totals.spent) },
+        { label: 'مبالغ مُعادة', value: money(totals.returned) },
+        { label: 'مفتوحة تحت التسوية', value: money(totals.open),
+          hint: `${list.filter((c) => c.status === 'approved').length} عهدة`, accent: totals.open > 0 },
+      ]} />
 
-      <Card title="العهد والمصروفات" subtitle="طلب عهدة من مشرف المسجد أو اللجنة، ثم رفع الفواتير وإقفالها"
-        action={<div className="flex gap-2 items-center">{filter}
-          <button className="btn-primary btn-sm" onClick={() => setOpen(true)}>＋ طلب عهدة</button></div>}
+      <Card title="العهد والمصروفات"
+        subtitle="يطلب المشرف أو اللجنة صرف عهدة، ويعتمدها المدير، ثم تُسجَّل مصروفاتها بفواتيرها وتُقفل ويُعاد المتبقي"
+        action={<>{filter}
+          <button className="btn-primary btn-sm" onClick={() => setOpen(true)}>＋ طلب صرف عهدة</button></>}
         pad={false}>
         {list.length === 0 ? <Empty icon="💳" title="لا توجد عهد" /> : (
           <ul className="divide-y divide-line">
@@ -172,12 +183,12 @@ function Custodies({ mosqueId, isComplex, filter }: {
 
                   <div className="flex flex-wrap gap-2 mt-3 no-print">
                     {c.status === 'requested' && isDirector && <>
-                      <button className="btn-olive btn-sm" onClick={() => decide(c, 'approved')}>اعتماد وصرف</button>
-                      <button className="btn-ghost btn-sm" onClick={() => decide(c, 'rejected')}>رفض</button>
+                      <button className="btn-primary btn-sm" onClick={() => decide(c, 'approved')}>اعتماد وصرف</button>
+                      <button className="btn-ghost btn-sm" onClick={() => decide(c, 'rejected')}>رفض الطلب</button>
                     </>}
                     {c.status === 'approved' && <>
-                      <button className="btn-primary btn-sm" onClick={() => setExpenseFor(c)}>＋ تسجيل مصروف وفاتورة</button>
-                      <button className="btn-gold btn-sm" onClick={() => setCloseFor(c)}>إقفال العهدة</button>
+                      <button className="btn-primary btn-sm" onClick={() => setExpenseFor(c)}>＋ تسجيل مصروف بفاتورة</button>
+                      <button className="btn-accent btn-sm" onClick={() => setCloseFor(c)}>إقفال العهدة</button>
                     </>}
                   </div>
                 </li>
@@ -187,74 +198,11 @@ function Custodies({ mosqueId, isComplex, filter }: {
         )}
       </Card>
 
-      <CustodyModal open={open} onClose={() => setOpen(false)} mosqueId={mosqueId || db.mosques[0].id} allowMosquePick={isComplex} />
+      <CustodyRequestModal open={open} onClose={() => setOpen(false)}
+        mosqueId={mosqueId || db.mosques[0].id} allowMosquePick={isComplex} />
       {expenseFor && <ExpenseModal custody={expenseFor} onClose={() => setExpenseFor(null)} />}
       {closeFor && <CloseModal custody={closeFor} onClose={() => setCloseFor(null)} />}
     </div>
-  )
-}
-
-function CustodyModal({ open, onClose, mosqueId, allowMosquePick }: {
-  open: boolean; onClose: () => void; mosqueId: string; allowMosquePick?: boolean
-}) {
-  const { db, set } = useDb()
-  const { user } = useAuth()
-  const toast = useToast()
-  const [f, setF] = useState<any>({})
-  const [key, setKey] = useState('')
-  if (key !== String(open)) {
-    setKey(String(open))
-    setF({ mosqueId, committeeId: '', amount: 1000, purpose: '', closeDate: '', responsibleId: '', note: '' })
-  }
-
-  const save = () => {
-    if (!f.purpose?.trim()) return toast('اذكر الغرض من العهدة.', 'bad')
-    if (!Number(f.amount)) return toast('حدّد المبلغ.', 'bad')
-    if (!f.closeDate) return toast('حدّد تاريخ الإقفال.', 'bad')
-    set((d) => d.custodies.push({
-      id: uid('c'), mosqueId: f.mosqueId, requesterId: user!.id,
-      committeeId: f.committeeId || undefined, amount: Number(f.amount),
-      purpose: f.purpose.trim(), closeDate: f.closeDate, status: 'requested',
-      responsibleId: f.responsibleId || undefined, createdAt: todayISO(),
-      expenses: [], note: f.note,
-    }))
-    toast('تم رفع طلب العهدة للاعتماد')
-    onClose()
-  }
-
-  return (
-    <Modal open={open} onClose={onClose} title="طلب عهدة" wide
-      footer={<><button className="btn-primary" onClick={save}>رفع الطلب</button>
-        <button className="btn-ghost" onClick={onClose}>إلغاء</button></>}>
-      <div className="grid sm:grid-cols-2 gap-4">
-        {allowMosquePick && (
-          <Field label="المسجد" required>
-            <Select value={f.mosqueId ?? ''} onChange={(v) => setF({ ...f, mosqueId: v, committeeId: '', responsibleId: '' })}
-              options={db.mosques.map((m) => ({ value: m.id, label: m.name }))} />
-          </Field>
-        )}
-        <Field label="اللجنة (اختياري)" hint="ينعكس على لوحة تحكم اللجنة">
-          <Select value={f.committeeId ?? ''} onChange={(v) => setF({ ...f, committeeId: v })} placeholder="بدون"
-            options={committeesOf(db, f.mosqueId).map((c) => ({ value: c.id, label: c.name }))} />
-        </Field>
-        <Field label="المبلغ المطلوب (ر.س)" required>
-          <input type="number" className="field" value={f.amount ?? ''} onChange={(e) => setF({ ...f, amount: e.target.value })} />
-        </Field>
-        <Field label="تاريخ الإقفال" required>
-          <input type="date" className="field" value={f.closeDate ?? ''} onChange={(e) => setF({ ...f, closeDate: e.target.value })} />
-        </Field>
-        <Field label="المسؤول عن الاستلام والإقفال" hint="من قائمة فريق عمل المسجد">
-          <Select value={f.responsibleId ?? ''} onChange={(v) => setF({ ...f, responsibleId: v })} placeholder="اختر…"
-            options={staffOf(db, f.mosqueId).map((p) => ({ value: p.id, label: `${p.name} — ${p.jobTitle}` }))} />
-        </Field>
-        <div className="sm:col-span-2">
-          <Field label="الغرض من العهدة" required>
-            <textarea className="field leading-7" rows={3} value={f.purpose ?? ''} onChange={(e) => setF({ ...f, purpose: e.target.value })}
-              placeholder="مثال: جوائز مسابقة الحفظ الشهرية" />
-          </Field>
-        </div>
-      </div>
-    </Modal>
   )
 }
 
@@ -272,6 +220,7 @@ function ExpenseModal({ custody, onClose }: { custody: Custody; onClose: () => v
     const amt = Number(amount)
     if (!amt) return toast('حدّد مبلغ المصروف.', 'bad')
     if (!description.trim()) return toast('اكتب بيان المصروف.', 'bad')
+    if (!invoice) return toast('أرفق صورة الفاتورة أو ملفها — لا يُسجَّل مصروف بلا فاتورة.', 'bad')
     if (amt > b.remaining) return toast(`المبلغ يتجاوز المتبقي في العهدة (${money(b.remaining)}).`, 'bad')
     set((d) => {
       const c = d.custodies.find((x) => x.id === custody.id)!
@@ -300,7 +249,7 @@ function ExpenseModal({ custody, onClose }: { custody: Custody; onClose: () => v
         <Field label="بيان المصروف" required>
           <input className="field" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="مثال: شراء جوائز" />
         </Field>
-        <Field label="الفاتورة" hint="صورة أو ملف PDF — تُحفظ مع المصروف">
+        <Field label="الفاتورة" required hint="صورة أو ملف PDF — لا يُسجَّل مصروف بلا فاتورة">
           <FileDrop multiple={false} label="إرفاق الفاتورة (صورة أو ملف)"
             onFiles={(fs) => setInvoice(fs[0])} />
           {invoice && <FileChips files={[invoice]} onRemove={() => setInvoice(undefined)} />}
@@ -318,8 +267,11 @@ function CloseModal({ custody, onClose }: { custody: Custody; onClose: () => voi
   const [responsibleId, setResponsibleId] = useState(custody.responsibleId ?? '')
   const [note, setNote] = useState('')
 
+  const noInvoice = custody.expenses.filter((e) => !e.invoice).length
+
   const save = () => {
     if (!responsibleId) return toast('حدّد المسؤول عن الاستلام والإقفال.', 'bad')
+    if (noInvoice > 0 && !confirm(`يوجد ${noInvoice} مصروف بلا فاتورة مرفقة. الإقفال على أي حال؟`)) return
     const ret = Number(returned) || 0
     if (Math.abs(b.spent + ret - custody.amount) > 0.5) {
       if (!confirm(`المنصرف ${money(b.spent)} + المُعاد ${money(ret)} لا يساوي مبلغ العهدة ${money(custody.amount)}. المتابعة على أي حال؟`)) return
@@ -363,57 +315,111 @@ function CloseModal({ custody, onClose }: { custody: Custody; onClose: () => voi
 /* ================= الرواتب ================= */
 function Payroll({ mosqueId, isComplex }: { mosqueId: string; isComplex: boolean }) {
   const { db } = useDb()
+  const [who, setWho] = useState<'staff' | 'teachers'>('staff')
+
   const people = (mosqueId ? staffOf(db, mosqueId) : db.people.filter((p) => p.mosqueId !== 'complex' && p.active))
     .filter((p) => p.salary > 0)
+  const teachers = (mosqueId ? teachersOf(db, mosqueId) : db.teachers.filter((t) => t.active))
+    .filter((t) => t.salary > 0)
 
-  const rows = people.map((p) => ({ p, pay: payrollFor(db, p, todayISO()) }))
-  const totalGross = rows.reduce((s, r) => s + r.p.salary, 0)
-  const totalDed = rows.reduce((s, r) => s + r.pay.deduction, 0)
+  const staffRows = people.map((p) => ({ id: p.id, name: p.name, sub: p.jobTitle, mosqueId: p.mosqueId, salary: p.salary, pay: payrollFor(db, p, todayISO()), late: 0 }))
+  const teacherRows = teachers.map((t) => {
+    const pay = teacherPayroll(db, t, todayISO())
+    return { id: t.id, name: t.name, sub: [t.circle, t.level].filter(Boolean).join(' · '), mosqueId: t.mosqueId, salary: t.salary, pay, late: pay.late }
+  })
+  const rows = who === 'staff' ? staffRows : teacherRows
+
+  const gross = rows.reduce((s, r) => s + r.salary, 0)
+  const ded = rows.reduce((s, r) => s + r.pay.deduction, 0)
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat label="إجمالي الرواتب" value={money(totalGross)} tone="brand" />
-        <Stat label="إجمالي الخصومات" value={money(totalDed)} tone={totalDed ? 'rose' : 'slate'} />
-        <Stat label="الصافي" value={money(totalGross - totalDed)} tone="olive" />
-        <Stat label="عدد الموظفين" value={rows.length} tone="gold" />
-      </div>
+    <div className="space-y-4">
+      <StatStrip items={[
+        { label: 'إجمالي الرواتب', value: money(gross) },
+        { label: 'إجمالي الخصومات', value: money(ded), accent: ded > 0 },
+        { label: 'الصافي المستحق', value: money(gross - ded) },
+        { label: 'عدد المستحقين', value: rows.length },
+      ]} />
 
-      <Card title="مسيّر الرواتب — الشهر الحالي"
+      <Card
+        title="مسيّر الرواتب — الشهر الحالي"
         subtitle={`الغياب يُخصم يومًا كاملًا، والاستئذان المعتمد نصف يوم، على أساس ${db.settings.workDaysPerMonth} يوم عمل شهريًا`}
-        pad={false}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-navy-50"><tr>
-              <th className="th">الموظف</th>
-              {!mosqueId && <th className="th">المسجد</th>}
-              <th className="th">الراتب</th><th className="th">قيمة اليوم</th>
-              <th className="th">غياب</th><th className="th">استئذان</th>
-              <th className="th">أيام الخصم</th><th className="th">الخصم</th><th className="th">الصافي</th>
-            </tr></thead>
-            <tbody>
-              {rows.map(({ p, pay }) => (
-                <tr key={p.id} className="row">
-                  <td className="td font-bold">{p.name}<span className="block text-[11px] text-ink-500 font-normal">{p.jobTitle}</span></td>
-                  {!mosqueId && <td className="td text-[12px] text-ink-500">{mosqueName(db, p.mosqueId)}</td>}
-                  <td className="td tabular-nums">{p.salary.toLocaleString('en-US')}</td>
-                  <td className="td tabular-nums text-ink-500">{pay.dayValue.toLocaleString('en-US')}</td>
-                  <td className="td tabular-nums"><Badge tone={pay.absent ? 'bad' : 'mute'}>{pay.absent}</Badge></td>
-                  <td className="td tabular-nums"><Badge tone={pay.excused ? 'warn' : 'mute'}>{pay.excused}</Badge></td>
-                  <td className="td tabular-nums font-bold">{pay.deductionDays}</td>
-                  <td className="td tabular-nums font-bold text-orange-600">{pay.deduction.toLocaleString('en-US')}</td>
-                  <td className="td tabular-nums font-black text-navy-800">{pay.net.toLocaleString('en-US')}</td>
-                </tr>
+        action={
+          <Tabs value={who} onChange={(v) => setWho(v as any)} items={[
+            { value: 'staff', label: 'الإداريون', count: staffRows.length },
+            { value: 'teachers', label: 'المعلمون', count: teacherRows.length },
+          ]} />
+        }
+        pad={false}
+      >
+        {rows.length === 0 ? (
+          <Empty icon="💼"
+            title={who === 'staff' ? 'لا يوجد إداريون برواتب مسجّلة' : 'لا يوجد معلمون برواتب مسجّلة'}
+            hint={who === 'staff'
+              ? 'سجّل الراتب في بيانات كل إداري ليظهر في المسيّر.'
+              : 'سجّل راتب كل معلم من صفحة المعلمين ليُحتسب خصم الغياب والاستئذان.'} />
+        ) : (
+          <>
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-navy-50"><tr>
+                  <th className="th">{who === 'staff' ? 'الموظف' : 'المعلم'}</th>
+                  {!mosqueId && <th className="th">المسجد</th>}
+                  <th className="th">الراتب</th><th className="th">قيمة اليوم</th>
+                  <th className="th">غياب</th><th className="th">استئذان</th>
+                  {who === 'teachers' && <th className="th">تأخير</th>}
+                  <th className="th">أيام الخصم</th><th className="th">الخصم</th><th className="th">الصافي</th>
+                </tr></thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.id} className="row">
+                      <td className="td font-bold">{r.name}
+                        {r.sub && <span className="block text-[11px] text-ink-400 font-normal">{r.sub}</span>}</td>
+                      {!mosqueId && <td className="td text-[12px] text-ink-500">{mosqueName(db, r.mosqueId)}</td>}
+                      <td className="td num">{r.salary.toLocaleString('en-US')}</td>
+                      <td className="td num text-ink-400">{r.pay.dayValue.toLocaleString('en-US')}</td>
+                      <td className="td"><Badge tone={r.pay.absent ? 'bad' : 'mute'}>{r.pay.absent}</Badge></td>
+                      <td className="td"><Badge tone={r.pay.excused ? 'warn' : 'mute'}>{r.pay.excused}</Badge></td>
+                      {who === 'teachers' && <td className="td"><Badge tone={r.late ? 'warn' : 'mute'}>{r.late}</Badge></td>}
+                      <td className="td num">{r.pay.deductionDays}</td>
+                      <td className="td num text-orange-700">{r.pay.deduction.toLocaleString('en-US')}</td>
+                      <td className="td num text-navy-800">{r.pay.net.toLocaleString('en-US')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-navy-50">
+                  <tr>
+                    <td className="td font-bold" colSpan={(mosqueId ? 7 : 8) + (who === 'teachers' ? 1 : 0)}>الإجمالي</td>
+                    <td className="td num text-navy-800">{(gross - ded).toLocaleString('en-US')}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <ul className="lg:hidden divide-y divide-line">
+              {rows.map((r) => (
+                <li key={r.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-[13.5px] truncate">{r.name}</p>
+                      {r.sub && <p className="text-[11px] text-ink-400 truncate">{r.sub}</p>}
+                    </div>
+                    <div className="text-left shrink-0">
+                      <p className="num text-[16px] text-navy-800">{money(r.pay.net)}</p>
+                      <p className="text-[10px] font-bold text-ink-400">الصافي</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <Badge tone="mute">الراتب {money(r.salary)}</Badge>
+                    {r.pay.absent > 0 && <Badge tone="bad">غياب {r.pay.absent}</Badge>}
+                    {r.pay.excused > 0 && <Badge tone="warn">استئذان {r.pay.excused}</Badge>}
+                    {r.pay.deduction > 0 && <Badge tone="warn">خصم {money(r.pay.deduction)}</Badge>}
+                  </div>
+                </li>
               ))}
-            </tbody>
-            <tfoot className="bg-navy-50 font-black">
-              <tr>
-                <td className="td" colSpan={mosqueId ? 7 : 8}>الإجمالي</td>
-                <td className="td tabular-nums text-navy-800">{(totalGross - totalDed).toLocaleString('en-US')}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+            </ul>
+          </>
+        )}
       </Card>
     </div>
   )

@@ -69,6 +69,77 @@ export function Badge({ tone = 'mute', children, dot }: {
   )
 }
 
+
+/* ---------------- قائمة إجراءات منسدلة ---------------- */
+export function Menu({ items, label = 'إجراءات', align = 'start' }: {
+  items: ({ label: string; onClick: () => void; icon?: string; danger?: boolean } | 'sep')[]
+  label?: string
+  align?: 'start' | 'end'
+}) {
+  const [open, setOpen] = useState(false)
+  const real = items.filter((i) => i !== 'sep') as Exclude<(typeof items)[number], 'sep'>[]
+  if (real.length === 0) return null
+
+  return (
+    <div className="relative no-print">
+      <button
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o) }}
+        aria-label={label} title={label}
+        className={`inline-grid place-items-center w-9 h-9 rounded-lg border transition
+          ${open ? 'bg-navy-700 text-white border-navy-700' : 'bg-white text-ink-500 border-line hover:bg-navy-50 hover:text-navy-700'}`}
+      >
+        <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="currentColor">
+          <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+        </svg>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setOpen(false) }} />
+          <div className={`menu ${align === 'start' ? 'left-0' : 'right-0'}`}>
+            {items.map((it, i) =>
+              it === 'sep' ? <hr key={i} className="menu-sep" /> : (
+                <button key={i} className={it.danger ? 'menu-item-danger' : 'menu-item'}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(false); it.onClick() }}>
+                  {it.icon && <span className="w-4 text-center">{it.icon}</span>}
+                  <span className="flex-1 text-right">{it.label}</span>
+                </button>
+              ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+/* ---------------- شريط إحصاءات هادئ ---------------- */
+const COLS: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-2 md:grid-cols-4',
+  5: 'grid-cols-2 md:grid-cols-5',
+  6: 'grid-cols-3 md:grid-cols-6',
+}
+
+export function StatStrip({ items, className = '' }: {
+  items: { label: string; value: React.ReactNode; hint?: string; accent?: boolean }[]
+  className?: string
+}) {
+  return (
+    <div className={`card overflow-hidden ${className}`}>
+      <div className={`stat-grid grid gap-px bg-line ${COLS[Math.min(items.length, 6)] ?? COLS[4]}`}>
+        {items.map((it, i) => (
+          <div key={i} className={`stat-cell ${it.accent ? 'bg-orange-50' : 'bg-white'}`}>
+            <div className="stat-k">{it.label}</div>
+            <div className={`stat-v ${it.accent ? 'text-orange-700' : ''}`}>{it.value}</div>
+            {it.hint && <div className="stat-h">{it.hint}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* ---------------- Modal ---------------- */
 export function Modal({ open, onClose, title, children, footer, wide }: {
   open: boolean; onClose: () => void; title: string
