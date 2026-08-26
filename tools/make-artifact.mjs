@@ -26,7 +26,7 @@ const escapeHtml = (t) => t.replace(/[\u0080-\uFFFF]/g, (c) => `&#${c.charCodeAt
 const safeScripts = scripts.replace(/(<script[^>]*>)([\s\S]*?)(<\/script>)/g,
   (_, a, body, b) => a + escapeJs(body) + b)
 
-const page = `<title>${escapeHtml('رياض القرآن')}</title>
+const page = `<title>رياض القرآن</title>
 <style>
   html { direction: rtl; }
   #boot { position: fixed; inset: 0; display: grid; place-items: center; background: #F4F7FB; z-index: 9999; }
