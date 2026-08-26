@@ -1,4 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
+import type { UploadedFile } from '../types'
+import { useDb } from '../store/db'
+import { uploadFile } from '../lib/api'
+import { fileSrc, isImage } from '../lib/files'
 
 /* ---------------- Card ---------------- */
 export function Card({ title, subtitle, action, children, className = '', pad = true }: {
@@ -274,29 +278,44 @@ export function Progress({ value, tone = 'brand' }: { value: number; tone?: 'bra
 
 /* ---------------- File upload ---------------- */
 export function FileDrop({ onFiles, accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx', multiple = true, label = 'إرفاق صورة أو ملف' }: {
-  onFiles: (files: { name: string; type: string; size: number; dataUrl: string }[]) => void
+  onFiles: (files: UploadedFile[]) => void
   accept?: string; multiple?: boolean; label?: string
 }) {
   const ref = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const { mode } = useDb()
 
   const handle = async (fl: FileList | null) => {
     if (!fl?.length) return
     setBusy(true)
-    const out = []
-    for (const f of Array.from(fl)) {
-      if (f.size > 3.5 * 1024 * 1024) { alert(`الملف "${f.name}" أكبر من ٣٫٥ ميجابايت.`); continue }
-      const dataUrl = await new Promise<string>((res, rej) => {
-        const r = new FileReader()
-        r.onload = () => res(r.result as string)
-        r.onerror = rej
-        r.readAsDataURL(f)
-      })
-      out.push({ name: f.name, type: f.type, size: f.size, dataUrl })
+    const out: UploadedFile[] = []
+    try {
+      for (const f of Array.from(fl)) {
+        if (f.size > 3 * 1024 * 1024) { alert(`الملف "${f.name}" أكبر من ٣ ميجابايت. اضغط الصورة أو ارفع نسخة أصغر.`); continue }
+        const dataUrl = await new Promise<string>((res, rej) => {
+          const r = new FileReader()
+          r.onload = () => res(r.result as string)
+          r.onerror = rej
+          r.readAsDataURL(f)
+        })
+        if (mode === 'remote') {
+          // في الوضع المشترك يُرفع الملف للخادم ويُحفظ رابطه فقط
+          try {
+            const up = await uploadFile({ name: f.name, type: f.type, dataUrl })
+            out.push({ name: up.name, type: up.type, size: up.size, url: up.url })
+            continue
+          } catch {
+            alert(`تعذّر رفع "${f.name}" إلى الخادم. تحقّق من الاتصال وأعد المحاولة.`)
+            continue
+          }
+        }
+        out.push({ name: f.name, type: f.type, size: f.size, dataUrl })
+      }
+    } finally {
+      setBusy(false)
+      if (ref.current) ref.current.value = ''
     }
-    setBusy(false)
     if (out.length) onFiles(out)
-    if (ref.current) ref.current.value = ''
   }
 
   return (
@@ -313,19 +332,20 @@ export function FileDrop({ onFiles, accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx
 }
 
 export function FileChips({ files, onRemove }: {
-  files: { name: string; type: string; dataUrl: string }[]
+  files: UploadedFile[]
   onRemove?: (i: number) => void
 }) {
   if (!files.length) return null
   return (
     <div className="flex flex-wrap gap-2 mt-2">
       {files.map((f, i) => (
-        <span key={i} className="chip bg-line text-ink-700 max-w-[220px]">
-          {f.type.startsWith('image/')
-            ? <img src={f.dataUrl} className="w-6 h-6 rounded object-cover" alt="" />
+        <span key={i} className="chip bg-navy-50 text-ink-700 max-w-[220px]">
+          {isImage(f)
+            ? <img src={fileSrc(f)} className="w-6 h-6 rounded object-cover" alt="" />
             : <span>📄</span>}
-          <a href={f.dataUrl} download={f.name} className="truncate hover:underline">{f.name}</a>
-          {onRemove && <button onClick={() => onRemove(i)} className="text-orange-500 font-black no-print">×</button>}
+          <a href={fileSrc(f)} download={f.name} target="_blank" rel="noreferrer"
+            className="truncate hover:underline">{f.name}</a>
+          {onRemove && <button onClick={() => onRemove(i)} className="text-orange-600 font-black no-print">×</button>}
         </span>
       ))}
     </div>

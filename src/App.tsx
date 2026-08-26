@@ -1,6 +1,7 @@
 import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { DbProvider } from './store/db'
+import { DbProvider, useDb } from './store/db'
 import { AuthProvider, useAuth } from './store/auth'
+import { LogoMark } from './components/Brand'
 import { ToastHost } from './components/ui'
 import { MosqueLayout, ComplexLayout } from './components/Layout'
 import { Runtime } from './components/Runtime'
@@ -23,9 +24,21 @@ import Finance from './pages/Finance'
 import MyPage from './pages/MyPage'
 import ChangePassword from './pages/ChangePassword'
 
+function Booting() {
+  return (
+    <div className="min-h-[100dvh] grid place-items-center bg-canvas">
+      <div className="flex flex-col items-center gap-4">
+        <LogoMark h={84} className="animate-pulse" />
+        <p className="text-[12px] font-bold text-ink-400">جارٍ تحميل بيانات المجمع…</p>
+      </div>
+    </div>
+  )
+}
+
 function Guard({ children }: { children: JSX.Element }) {
-  const { user, mustChangePassword } = useAuth()
+  const { user, mustChangePassword, authReady } = useAuth()
   const loc = useLocation()
+  if (!authReady) return <Booting />
   if (!user) return <Navigate to="/login" replace state={{ from: loc.pathname }} />
   // إلزام بتغيير الرمز المبدئي قبل الدخول لأي شاشة
   if (mustChangePassword && loc.pathname !== '/change-password') {
@@ -35,15 +48,24 @@ function Guard({ children }: { children: JSX.Element }) {
 }
 
 function RequireSession({ children }: { children: JSX.Element }) {
-  const { user } = useAuth()
+  const { user, authReady } = useAuth()
+  if (!authReady) return <Booting />
   if (!user) return <Navigate to="/login" replace />
   return children
+}
+
+/** لا تُعرض شاشة الدخول قبل معرفة هل توجد جلسة قائمة على الخادم */
+function LoginGate() {
+  const { user, authReady, mustChangePassword } = useAuth()
+  if (!authReady) return <Booting />
+  if (user) return <Navigate to={mustChangePassword ? '/change-password' : '/'} replace />
+  return <Login />
 }
 
 function Shell() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<LoginGate />} />
       <Route path="/change-password" element={<RequireSession><ChangePassword /></RequireSession>} />
       <Route path="/me" element={<Guard><MyPage /></Guard>} />
 

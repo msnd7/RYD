@@ -19,17 +19,21 @@ export default function Login() {
   const [pw, setPw] = useState('')
   const [show, setShow] = useState(false)
   const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErr('')
     if (!email.trim()) return setErr('اكتب البريد الإلكتروني.')
     if (!pw) return setErr('اكتب رمز الدخول.')
-    const r = login(email, pw)
+    setBusy(true)
+    const r = await login(email, pw)
+    setBusy(false)
     if (!r.ok) {
       return setErr(
         r.reason === 'notfound' ? 'لا يوجد حساب بهذا البريد. راجع مدير المجمع أو مشرف مسجدك.'
         : r.reason === 'inactive' ? 'هذا الحساب موقوف حاليًا.'
+        : r.reason === 'network' ? 'تعذّر الاتصال بالخادم. تحقّق من الإنترنت وأعد المحاولة.'
         : 'رمز الدخول غير صحيح.',
       )
     }
@@ -123,7 +127,9 @@ export default function Login() {
               </p>
             )}
 
-            <button className="btn-primary btn-lg w-full">دخول</button>
+            <button className="btn-primary btn-lg w-full" disabled={busy}>
+              {busy ? 'جارٍ الدخول…' : 'دخول'}
+            </button>
           </form>
 
           <div className="mt-8 rounded-xl border border-line px-4 py-3.5">

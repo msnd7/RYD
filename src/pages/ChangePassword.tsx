@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/auth'
 import { useDb } from '../store/db'
@@ -17,6 +17,15 @@ export default function ChangePassword() {
   const [again, setAgain] = useState('')
   const [show, setShow] = useState(false)
   const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(false)
+
+  // ننتظر وصول البيانات المحدَّثة من الخادم قبل الانتقال
+  useEffect(() => {
+    if (done && !mustChangePassword && user) {
+      nav(user.role === 'supervisor' ? `/m/${user.mosqueId}` : '/', { replace: true })
+    }
+  }, [done, mustChangePassword, user, nav])
 
   if (!user) return null
 
@@ -30,15 +39,17 @@ export default function ChangePassword() {
   })()
   const strengthLabel = ['ضعيف جدًا', 'ضعيف', 'متوسط', 'جيد', 'قوي'][strength]
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErr('')
     if (next !== again) return setErr('الرمز الجديد وتأكيده غير متطابقين.')
     if (next === db.settings.defaultPassword) return setErr('لا يمكن استخدام الرمز المبدئي. اختر رمزًا خاصًا بك.')
-    const r = changePassword(current, next)
+    setBusy(true)
+    const r = await changePassword(current, next)
+    setBusy(false)
     if (!r.ok) return setErr(r.error!)
     toast('تم تغيير رمز الدخول بنجاح')
-    nav(user.role === 'supervisor' ? `/m/${user.mosqueId}` : '/', { replace: true })
+    setDone(true)
   }
 
   return (
@@ -109,10 +120,10 @@ export default function ChangePassword() {
             </p>
           )}
 
-          <button className="btn-primary btn-lg w-full">حفظ الرمز الجديد</button>
+          <button className="btn-primary btn-lg w-full" disabled={busy}>{busy ? 'جارٍ الحفظ…' : 'حفظ الرمز الجديد'}</button>
 
           <button type="button" className="btn-ghost btn-sm w-full"
-            onClick={() => { logout(); nav('/login', { replace: true }) }}>
+            onClick={async () => { await logout(); nav('/login', { replace: true }) }}>
             تسجيل الخروج
           </button>
         </form>

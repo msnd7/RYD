@@ -18,7 +18,7 @@ const ROLE_LABEL: Record<Role, string> = {
 export default function Staff({ scope }: { scope?: 'complex' }) {
   const { mid = '' } = useParams()
   const { db, set } = useDb()
-  const { user, isDirector } = useAuth()
+  const { user, isDirector, resetPassword: doReset } = useAuth()
   const toast = useToast()
   const isComplex = scope === 'complex'
 
@@ -45,13 +45,10 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
     toast('تم إيقاف الحساب')
   }
 
-  const resetPassword = (p: Person) => {
+  const resetPassword = async (p: Person) => {
     if (!confirm(`إعادة تعيين رمز ${p.name} إلى الرمز المبدئي (${db.settings.defaultPassword})؟`)) return
-    set((d) => {
-      const x = d.people.find((y) => y.id === p.id)!
-      x.password = d.settings.defaultPassword
-      x.mustChangePassword = true
-    })
+    const r = await doReset(p.id)
+    if (!r.ok) return toast(r.error ?? 'تعذّرت إعادة التعيين', 'bad')
     setCredentials({ name: p.name, email: p.email, password: db.settings.defaultPassword })
     toast('تمت إعادة تعيين الرمز')
   }
@@ -169,7 +166,7 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
                             { label: 'عرض العقد', icon: '📄', onClick: () => setContractFor(p) },
                             ...(canEditRow(p) ? [{ label: 'تعديل البيانات', icon: '✎', onClick: () => { setEditing(p); setOpen(true) } }] : []),
                             ...(isDirector ? [
-                              { label: 'إعادة تعيين الرمز', icon: '🔑', onClick: () => resetPassword(p) },
+                              { label: 'إعادة تعيين الرمز', icon: '🔑', onClick: () => { void resetPassword(p) } },
                               'sep' as const,
                               { label: 'إيقاف الحساب', icon: '⏻', danger: true, onClick: () => stop(p) },
                             ] : []),
@@ -210,7 +207,7 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
                         { label: 'عرض العقد', icon: '📄', onClick: () => setContractFor(p) },
                         ...(canEditRow(p) ? [{ label: 'تعديل البيانات', icon: '✎', onClick: () => { setEditing(p); setOpen(true) } }] : []),
                         ...(isDirector ? [
-                          { label: 'إعادة تعيين الرمز', icon: '🔑', onClick: () => resetPassword(p) },
+                          { label: 'إعادة تعيين الرمز', icon: '🔑', onClick: () => { void resetPassword(p) } },
                           'sep' as const,
                           { label: 'إيقاف الحساب', icon: '⏻', danger: true, onClick: () => stop(p) },
                         ] : []),
@@ -440,7 +437,7 @@ function PersonModal({ open, onClose, person, mosqueId, allowMosquePick, allowRo
 /* ================= العقد والتوقيع ================= */
 function ContractModal({ person, onClose }: { person: Person | null; onClose: () => void }) {
   const { db, set } = useDb()
-  const { user, isDirector } = useAuth()
+  const { user, isDirector, resetPassword: doReset } = useAuth()
   const toast = useToast()
   if (!person) return null
 

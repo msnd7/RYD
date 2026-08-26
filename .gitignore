@@ -5,3 +5,7 @@ dist
 tsconfig.tsbuildinfo
 
 dist-single
+
+.vercel
+.env
+.env.local

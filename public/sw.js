@@ -1,5 +1,5 @@
 /* Service Worker — منصة رياض القرآن */
-const CACHE = 'ryd-v1'
+const CACHE = 'ryd-v2'
 const CORE = ['./', './index.html', './manifest.webmanifest', './logo.png', './favicon.png']
 
 self.addEventListener('install', (e) => {
@@ -17,6 +17,10 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request
   if (req.method !== 'GET' || !req.url.startsWith('http')) return
+
+  // نداءات الخادم لا تُخزَّن أبدًا: البيانات يجب أن تصل حيّة
+  const url = new URL(req.url)
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) return
 
   // التنقل: الشبكة أولًا ثم النسخة المخزّنة (للعمل بدون إنترنت)
   if (req.mode === 'navigate') {

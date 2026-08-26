@@ -8,6 +8,7 @@ import {
 } from '../components/ui'
 import { AiTextArea } from '../components/AiTextArea'
 import { PageHeader } from '../components/PageHeader'
+import { fileSrc, isImage } from '../lib/files'
 import { ReportHeader, ReportFooter } from '../components/ReportShell'
 import { Donut, SplitBar, BarChart, C } from '../components/charts'
 import { todayISO, shiftDays, fmtDate, dueLabel } from '../lib/date'
@@ -514,8 +515,8 @@ function ViewUpload({ report, onClose }: { report: PeriodReport; onClose: () => 
               <div className="grid sm:grid-cols-3 gap-3">
                 {report.files.map((f, i) => (
                   <div key={i} className="rounded-xl border border-line overflow-hidden">
-                    {f.type.startsWith('image/')
-                      ? <img src={f.dataUrl} alt={f.name} className="w-full h-36 object-cover" />
+                    {isImage(f)
+                      ? <img src={fileSrc(f)} alt={f.name} className="w-full h-36 object-cover" />
                       : <div className="h-36 grid place-items-center bg-navy-50 text-3xl">📄</div>}
                     <p className="text-[11px] font-bold p-2 truncate">{f.name}</p>
                   </div>

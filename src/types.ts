@@ -121,7 +121,15 @@ export interface Meeting {
   createdAt: string
 }
 
-export interface UploadedFile { name: string; type: string; size: number; dataUrl: string }
+export interface UploadedFile {
+  name: string
+  type: string
+  size: number
+  /** رابط الملف على الخادم في الوضع المشترك */
+  url?: string
+  /** بيانات مضمّنة في الوضع المحلي (بلا خادم) */
+  dataUrl?: string
+}
 
 export interface PeriodReport {
   id: ID

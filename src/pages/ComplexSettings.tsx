@@ -43,7 +43,7 @@ export default function ComplexSettings() {
 /* ================= الحسابات ================= */
 function Accounts() {
   const { db, set } = useDb()
-  const { user } = useAuth()
+  const { user, resetPassword } = useAuth()
   const toast = useToast()
   const [q, setQ] = useState('')
   const [reveal, setReveal] = useState<Person | null>(null)
@@ -52,13 +52,10 @@ function Accounts() {
     .filter((p) => p.active)
     .filter((p) => !q.trim() || (p.name + p.email + p.jobTitle).includes(q.trim()))
 
-  const resetOne = (p: Person) => {
+  const resetOne = async (p: Person) => {
     if (!confirm(`إعادة تعيين رمز ${p.name} إلى الرمز المبدئي (${db.settings.defaultPassword})؟\nسيُطلب منه تغييره عند أول دخول.`)) return
-    set((d) => {
-      const x = d.people.find((y) => y.id === p.id)!
-      x.password = d.settings.defaultPassword
-      x.mustChangePassword = true
-    })
+    const r = await resetPassword(p.id)
+    if (!r.ok) return toast(r.error ?? 'تعذّرت إعادة التعيين', 'bad')
     setReveal({ ...p, password: db.settings.defaultPassword })
     toast('تمت إعادة تعيين الرمز')
   }
@@ -93,7 +90,7 @@ function Accounts() {
                   {p.lastLoginAt && <Badge tone="mute">آخر دخول {fmtDate(p.lastLoginAt.slice(0, 10))}</Badge>}
                 </div>
               </div>
-              <button className="btn-ghost btn-sm" onClick={() => resetOne(p)}>إعادة تعيين الرمز</button>
+              <button className="btn-ghost btn-sm" onClick={() => { void resetOne(p) }}>إعادة تعيين الرمز</button>
             </li>
           ))}
         </ul>

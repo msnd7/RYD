@@ -117,7 +117,7 @@ export function TopBar({ onMenu, title, subtitle, back }: {
   onMenu?: () => void; title: string; subtitle?: string; back?: string
 }) {
   const { user, logout } = useAuth()
-  const { db } = useDb()
+  const { db, mode, sync, refresh } = useDb()
   const nav = useNavigate()
   const [menu, setMenu] = useState(false)
   const alerts = user ? dueSoonTasks(db, user).length : 0
@@ -142,6 +142,8 @@ export function TopBar({ onMenu, title, subtitle, back }: {
           <p className="font-display font-bold text-[14px] sm:text-[15px] truncate leading-tight text-navy-900">{title}</p>
           {subtitle && <p className="text-[10.5px] text-ink-400 truncate">{subtitle}</p>}
         </div>
+
+        <SyncBadge mode={mode} sync={sync} onRefresh={() => { void refresh() }} />
 
         <button onClick={() => nav('/me')} className="relative btn-icon" title="تنبيهاتي">
           <IconBell />
@@ -181,7 +183,7 @@ export function TopBar({ onMenu, title, subtitle, back }: {
                   <IconGear className="w-4 h-4" /> تغيير رمز الدخول
                 </button>
                 <hr className="menu-sep" />
-                <button className="menu-item-danger" onClick={() => { logout(); nav('/login') }}>
+                <button className="menu-item-danger" onClick={async () => { await logout(); nav('/login') }}>
                   <IconOut className="w-4 h-4" /> تسجيل الخروج
                 </button>
               </div>
@@ -190,6 +192,33 @@ export function TopBar({ onMenu, title, subtitle, back }: {
         </div>
       </div>
     </header>
+  )
+}
+
+/** حالة حفظ البيانات: مشتركة على الخادم أم محلية على الجهاز */
+function SyncBadge({ mode, sync, onRefresh }: { mode: string; sync: string; onRefresh: () => void }) {
+  if (mode === 'loading') return null
+
+  if (mode === 'local') {
+    return (
+      <span title="لا يوجد خادم متصل — تُحفظ البيانات في هذا المتصفح فقط"
+        className="hidden sm:inline-flex chip bg-orange-50 text-orange-700 border border-orange-200">
+        حفظ محلي
+      </span>
+    )
+  }
+  if (sync === 'saving') {
+    return <span className="hidden sm:inline-flex chip bg-navy-50 text-navy-700">جارٍ الحفظ…</span>
+  }
+  if (sync === 'error') {
+    return (
+      <button onClick={onRefresh} title="تعذّر الحفظ على الخادم — اضغط لإعادة المحاولة"
+        className="inline-flex chip bg-orange-500 text-white">تعذّر الحفظ</button>
+    )
+  }
+  return (
+    <button onClick={onRefresh} title="البيانات محفوظة على الخادم — اضغط لتحديثها الآن"
+      className="hidden lg:inline-flex chip bg-navy-50 text-navy-700 hover:bg-navy-100 transition">محفوظ</button>
   )
 }
 

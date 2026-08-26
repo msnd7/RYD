@@ -11,6 +11,7 @@ import { PageHeader } from '../components/PageHeader'
 import { CustodyRequestModal } from '../components/CustodyRequestModal'
 import { SplitBar, C } from '../components/charts'
 import { todayISO, fmtDate, daysBetween } from '../lib/date'
+import { fileSrc } from '../lib/files'
 import {
   staffOf, committeesOf, personName, committeeName, mosqueName,
   custodyBalance, payrollFor, teachersOf, teacherPayroll,
@@ -160,7 +161,8 @@ function Custodies({ mosqueId, isComplex, filter }: {
                               <span className="tabular-nums font-black text-navy-700">{money(e.amount)}</span>
                               <span className="text-ink-500">{fmtDate(e.date)}</span>
                               {e.invoice
-                                ? <a href={e.invoice.dataUrl} download={e.invoice.name} className="chip bg-navy-100 text-navy-800">🧾 الفاتورة</a>
+                                ? <a href={fileSrc(e.invoice)} download={e.invoice.name} target="_blank" rel="noreferrer"
+                                    className="chip bg-navy-100 text-navy-800">🧾 الفاتورة</a>
                                 : <span className="chip bg-orange-100 text-orange-700">بدون فاتورة</span>}
                             </li>
                           ))}
