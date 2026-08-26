@@ -31,7 +31,7 @@ export default function MyPage() {
     <div className="min-h-screen">
       <TopBar title="صفحتي" subtitle={`${user.jobTitle} · ${mosqueName(db, user.mosqueId)}`} back="/" />
       <div className="max-w-[1180px] mx-auto p-4 sm:p-6 space-y-5 fade-in">
-        <div className="rounded-3xl bg-gradient-to-bl from-brand-700 to-brand-900 text-white p-6 flex flex-wrap items-center gap-5">
+        <div className="rounded-3xl bg-gradient-to-bl from-navy-700 to-navy-900 text-white p-6 flex flex-wrap items-center gap-5">
           <span className="w-16 h-16 rounded-2xl bg-white/15 grid place-items-center text-2xl font-display font-black">
             {user.name[0]}
           </span>
@@ -42,7 +42,7 @@ export default function MyPage() {
               {user.committeeIds.map((c) => (
                 <span key={c} className="chip bg-white/15 text-white">{committeeName(db, c)}</span>
               ))}
-              {user.financeAccess && <span className="chip bg-gold-400 text-white">تفويض مالي</span>}
+              {user.financeAccess && <span className="chip bg-orange-400 text-white">تفويض مالي</span>}
             </div>
           </div>
           <div className="sm:mr-auto flex items-center gap-4">
@@ -61,7 +61,7 @@ export default function MyPage() {
           <Card title="بنودي المفتوحة" pad={false} className="lg:col-span-2"
             action={user.mosqueId !== 'complex' && <Link to={`/m/${user.mosqueId}/tasks`} className="btn-ghost btn-sm">كل المهام</Link>}>
             {open.length === 0 ? <Empty icon="✅" title="لا توجد بنود مفتوحة" hint="أحسنت، كل ما لديك منجز." /> : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-line">
                 {open.map((t) => {
                   const d = dueLabel(t.dueDate)
                   return (
@@ -106,9 +106,9 @@ export default function MyPage() {
               <Card title="راتبي هذا الشهر">
                 <ul className="space-y-2 text-[13px]">
                   <li className="flex justify-between"><span className="text-ink-500">الراتب</span><b>{user.salary.toLocaleString('en-US')}</b></li>
-                  <li className="flex justify-between"><span className="text-ink-500">الخصم</span><b className="text-rose-600">{pay.deduction.toLocaleString('en-US')}</b></li>
-                  <li className="flex justify-between border-t border-slate-100 pt-2"><span className="font-bold">الصافي</span>
-                    <b className="text-olive-700 text-base">{pay.net.toLocaleString('en-US')} ر.س</b></li>
+                  <li className="flex justify-between"><span className="text-ink-500">الخصم</span><b className="text-orange-600">{pay.deduction.toLocaleString('en-US')}</b></li>
+                  <li className="flex justify-between border-t border-line pt-2"><span className="font-bold">الصافي</span>
+                    <b className="text-navy-800 text-base">{pay.net.toLocaleString('en-US')} ر.س</b></li>
                 </ul>
               </Card>
             )}
@@ -117,7 +117,7 @@ export default function MyPage() {
 
         <Card title="آخر الرسائل والإعلانات" pad={false}>
           {anns.length === 0 ? <Empty icon="📣" title="لا توجد رسائل" /> : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line">
               {anns.map((a) => (
                 <li key={a.id} className="px-5 py-3.5">
                   <div className="flex items-center gap-2">

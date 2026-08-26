@@ -4,30 +4,32 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#eef6fc', 100: '#d7e9f7', 200: '#aed3ef', 300: '#7ab6e3',
-          400: '#4295d3', 500: '#1f78bd', 600: '#135e9c', 700: '#0f4c81',
-          800: '#0d3f6b', 900: '#0b3358',
+        // الأزرق الغامق — اللون الأساسي
+        navy: {
+          50: '#EEF3F9', 100: '#DAE5F0', 200: '#B2C7DE', 300: '#80A4C8',
+          400: '#4E7CAD', 500: '#2B5D91', 600: '#1A4877', 700: '#12395F',
+          800: '#0C2A47', 900: '#071B2F', 950: '#04121F',
         },
-        gold: {
-          50: '#fff9ec', 100: '#fff0cc', 200: '#ffe099', 300: '#ffc63f',
-          400: '#f9ad24', 500: '#f7941e', 600: '#dd7a0b', 700: '#b5762a',
+        // البرتقالي — لون التمييز
+        orange: {
+          50: '#FFF7EE', 100: '#FFE9D1', 200: '#FFD29E', 300: '#FFB666',
+          400: '#FB9B34', 500: '#F0820E', 600: '#D46A04', 700: '#A85206',
+          800: '#7C3D07', 900: '#5A2D06',
         },
-        olive: {
-          50: '#f2f9ee', 100: '#e0f1d7', 200: '#c2e4b1', 300: '#9dd184',
-          400: '#7cbf5f', 500: '#6ab04a', 600: '#55963a', 700: '#43772f',
-        },
-        ink: { 900: '#12202e', 700: '#33475b', 500: '#647a91', 300: '#a8b8c8' },
+        ink: { 900: '#0B1F33', 800: '#173250', 700: '#2E4761', 500: '#65798E', 400: '#8397AB', 300: '#A9B9C8' },
+        line: '#E3EAF2',
+        canvas: '#F4F7FB',
       },
       fontFamily: {
-        sans: ['Tajawal', 'Cairo', 'Segoe UI', 'system-ui', 'sans-serif'],
-        display: ['Cairo', 'Tajawal', 'system-ui', 'sans-serif'],
+        sans: ['Thmanyah Sans', 'system-ui', 'Segoe UI', 'sans-serif'],
+        display: ['Thmanyah Display', 'Thmanyah Sans', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        soft: '0 1px 2px rgba(16,40,64,.04), 0 8px 24px -12px rgba(16,40,64,.18)',
-        lift: '0 2px 6px rgba(16,40,64,.06), 0 18px 40px -18px rgba(16,40,64,.28)',
+        soft: '0 1px 2px rgba(7,27,47,.04), 0 6px 20px -10px rgba(7,27,47,.16)',
+        lift: '0 2px 6px rgba(7,27,47,.06), 0 20px 44px -20px rgba(7,27,47,.30)',
+        glow: '0 10px 30px -12px rgba(240,130,14,.55)',
       },
-      borderRadius: { xl2: '1.25rem' },
+      screens: { xs: '420px' },
     },
   },
   plugins: [],

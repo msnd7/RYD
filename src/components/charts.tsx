@@ -32,7 +32,7 @@ export function BarChart({ data, height = 150, colors }: {
 }
 
 /* دائرة نسبة */
-export function Donut({ value, size = 118, stroke = 13, tone = '#135e9c', label, sub }: {
+export function Donut({ value, size = 118, stroke = 13, tone = '#12395F', label, sub }: {
   value: number; size?: number; stroke?: number; tone?: string; label?: string; sub?: string
 }) {
   const r = (size - stroke) / 2
@@ -41,7 +41,7 @@ export function Donut({ value, size = 118, stroke = 13, tone = '#135e9c', label,
   return (
     <div className="relative inline-grid place-items-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef2f7" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E3EAF2" strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={tone} strokeWidth={stroke}
           strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off}
           style={{ transition: 'stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)' }} />
@@ -59,7 +59,7 @@ export function SplitBar({ parts }: { parts: { value: number; color: string; lab
   const total = parts.reduce((s, p) => s + p.value, 0) || 1
   return (
     <div>
-      <div className="flex h-3 rounded-full overflow-hidden bg-slate-100">
+      <div className="flex h-3 rounded-full overflow-hidden bg-line">
         {parts.map((p, i) => (
           <div key={i} title={`${p.label}: ${p.value}`} style={{ width: `${(p.value / total) * 100}%`, background: p.color }}
             className="transition-all duration-700" />
@@ -78,7 +78,10 @@ export function SplitBar({ parts }: { parts: { value: number; color: string; lab
 }
 
 export const C = {
-  present: '#55963a', absent: '#e11d48', excused: '#f7a41c',
-  done: '#55963a', stuck: '#e11d48', postponed: '#f7a41c', pending: '#135e9c',
-  brand: '#135e9c', gold: '#f7a41c', olive: '#55963a', rose: '#e11d48',
+  present: '#1A4877', absent: '#D46A04', excused: '#FFB666',
+  done: '#12395F', stuck: '#D46A04', postponed: '#FFB666', pending: '#80A4C8',
+  navy: '#12395F', navyMid: '#2B5D91', navySoft: '#80A4C8',
+  orange: '#F0820E', orangeDeep: '#D46A04', orangeSoft: '#FFD29E',
+  // أسماء متوافقة مع الاستخدامات السابقة
+  brand: '#12395F', olive: '#1A4877', gold: '#FFB666', rose: '#D46A04',
 }

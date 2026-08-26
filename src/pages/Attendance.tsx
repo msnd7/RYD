@@ -108,7 +108,7 @@ function MyAttendance({ mosqueId, onLeave }: { mosqueId: string; onLeave: () => 
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="text-center">
             <div className={`w-32 h-32 rounded-3xl grid place-items-center text-5xl shadow-soft
-              ${mine?.status === 'present' ? 'bg-olive-100' : mine?.status === 'excused' ? 'bg-gold-100' : mine?.status === 'absent' ? 'bg-rose-100' : 'bg-slate-100'}`}>
+              ${mine?.status === 'present' ? 'bg-navy-100' : mine?.status === 'excused' ? 'bg-orange-100' : mine?.status === 'absent' ? 'bg-orange-100' : 'bg-line'}`}>
               {mine?.status === 'present' ? '✅' : mine?.status === 'excused' ? '📝' : mine?.status === 'absent' ? '❌' : '📍'}
             </div>
             <div className="mt-3 font-extrabold">
@@ -118,8 +118,8 @@ function MyAttendance({ mosqueId, onLeave }: { mosqueId: string; onLeave: () => 
           </div>
 
           <div className="flex-1 w-full">
-            <div className="rounded-2xl bg-brand-50/70 border border-brand-100 p-4">
-              <p className="text-[13px] font-bold text-brand-800">🕌 {mosque?.name}</p>
+            <div className="rounded-2xl bg-navy-50/70 border border-navy-100 p-4">
+              <p className="text-[13px] font-bold text-navy-800">🕌 {mosque?.name}</p>
               <p className="text-[12px] text-ink-500 mt-1 leading-6">
                 يتم التحضير فقط عند تواجدك داخل النطاق المكاني للمسجد
                 (نطاق {mosque?.geofence.radius} متر حول إحداثيات المسجد المحددة من إدارة المجمع).
@@ -135,14 +135,14 @@ function MyAttendance({ mosqueId, onLeave }: { mosqueId: string; onLeave: () => 
 
             {msg && (
               <div className={`mt-3 rounded-xl px-4 py-3 text-[13px] font-bold leading-6
-                ${msg.ok ? 'bg-olive-50 text-olive-700 border border-olive-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+                ${msg.ok ? 'bg-navy-50 text-navy-800 border border-navy-200' : 'bg-orange-50 text-orange-700 border border-orange-200'}`}>
                 {msg.ok ? '✔ ' : '⚠ '}{msg.text}
               </div>
             )}
           </div>
         </div>
 
-        <hr className="my-5 border-slate-100" />
+        <hr className="my-5 border-line" />
         <h4 className="font-extrabold text-[14px] mb-3">آخر ١٤ يومًا</h4>
         <BarChart data={byDay.map((d) => ({
           label: d.date.slice(8),
@@ -171,10 +171,10 @@ function MyAttendance({ mosqueId, onLeave }: { mosqueId: string; onLeave: () => 
             <ul className="space-y-2.5 text-[13px]">
               <li className="flex justify-between"><span className="text-ink-500">الراتب المسجّل</span><b className="tabular-nums">{user!.salary.toLocaleString('en-US')} ر.س</b></li>
               <li className="flex justify-between"><span className="text-ink-500">قيمة اليوم</span><b className="tabular-nums">{pay.dayValue.toLocaleString('en-US')} ر.س</b></li>
-              <li className="flex justify-between"><span className="text-ink-500">أيام الغياب (يوم كامل)</span><b className="tabular-nums text-rose-600">{pay.absent}</b></li>
-              <li className="flex justify-between"><span className="text-ink-500">أيام الاستئذان (نصف يوم)</span><b className="tabular-nums text-gold-600">{pay.excused}</b></li>
-              <li className="flex justify-between border-t border-slate-100 pt-2.5"><span className="text-ink-500">إجمالي الخصم</span><b className="tabular-nums text-rose-600">{pay.deduction.toLocaleString('en-US')} ر.س</b></li>
-              <li className="flex justify-between"><span className="font-bold">الصافي المستحق</span><b className="tabular-nums text-olive-700 text-base">{pay.net.toLocaleString('en-US')} ر.س</b></li>
+              <li className="flex justify-between"><span className="text-ink-500">أيام الغياب (يوم كامل)</span><b className="tabular-nums text-orange-600">{pay.absent}</b></li>
+              <li className="flex justify-between"><span className="text-ink-500">أيام الاستئذان (نصف يوم)</span><b className="tabular-nums text-orange-600">{pay.excused}</b></li>
+              <li className="flex justify-between border-t border-line pt-2.5"><span className="text-ink-500">إجمالي الخصم</span><b className="tabular-nums text-orange-600">{pay.deduction.toLocaleString('en-US')} ر.س</b></li>
+              <li className="flex justify-between"><span className="font-bold">الصافي المستحق</span><b className="tabular-nums text-navy-800 text-base">{pay.net.toLocaleString('en-US')} ر.س</b></li>
             </ul>
           </Card>
         )}
@@ -245,7 +245,7 @@ function TeamAttendance({ mid, isComplex, filter }: { mid: string; isComplex: bo
         </div>}>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50">
+            <thead className="bg-navy-50">
               <tr>
                 <th className="th">العامل</th>
                 {isComplex && !mid && <th className="th">المسجد</th>}
@@ -272,9 +272,9 @@ function TeamAttendance({ mid, isComplex, filter }: { mid: string; isComplex: bo
                     <td className="td">
                       <select value={r?.status ?? ''} onChange={(e) => mark(p.id, e.target.value as AttStatus)}
                         className={`rounded-lg px-2.5 py-1.5 text-[12px] font-black border-0 outline-none cursor-pointer
-                          ${r?.status === 'present' ? 'bg-olive-100 text-olive-700'
-                            : r?.status === 'absent' ? 'bg-rose-100 text-rose-700'
-                            : r?.status === 'excused' ? 'bg-gold-100 text-gold-700' : 'bg-slate-100 text-ink-500'}`}>
+                          ${r?.status === 'present' ? 'bg-navy-100 text-navy-800'
+                            : r?.status === 'absent' ? 'bg-orange-100 text-orange-700'
+                            : r?.status === 'excused' ? 'bg-orange-100 text-orange-700' : 'bg-line text-ink-500'}`}>
                         <option value="" disabled>— لم يُسجَّل —</option>
                         <option value="present">حاضر</option>
                         <option value="excused">مستأذن</option>
@@ -345,7 +345,7 @@ function Leaves({ mid, onNew }: { mid: string; onNew: () => void }) {
     <Card title="طلبات الاستئذان" subtitle="الاستئذان المعتمد يُخصم منه نصف يوم فقط بدل يوم كامل"
       action={<button className="btn-gold btn-sm" onClick={onNew}>＋ طلب استئذان</button>} pad={false}>
       {rows.length === 0 ? <Empty icon="📝" title="لا توجد طلبات" /> : (
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-line">
           {rows.map((l) => (
             <li key={l.id} className="px-5 py-4 flex flex-wrap items-center gap-3">
               <div className="min-w-0 flex-1">
@@ -398,7 +398,7 @@ function LeaveModal({ open, onClose, mosqueId }: { open: boolean; onClose: () =>
       footer={<><button className="btn-primary" onClick={save}>رفع الطلب</button>
         <button className="btn-ghost" onClick={onClose}>إلغاء</button></>}>
       <div className="space-y-4">
-        <div className="rounded-xl bg-gold-50 border border-gold-200 px-4 py-3 text-[12.5px] text-gold-700 font-bold leading-6">
+        <div className="rounded-xl bg-orange-50 border border-orange-200 px-4 py-3 text-[12.5px] text-orange-700 font-bold leading-6">
           عند اعتماد المدير للطلب يُحتسب لك «استئذان» ويُخصم نصف يوم فقط، وبدون اعتماد يُحتسب غيابًا بيوم كامل.
         </div>
         <Field label="تاريخ الاستئذان" required>

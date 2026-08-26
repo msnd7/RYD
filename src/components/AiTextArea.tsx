@@ -45,11 +45,11 @@ export function AiTextArea({ value, onChange, rows = 5, placeholder, kind = 'mes
       </div>
 
       {draft !== null && (
-        <div className="mt-3 rounded-2xl border border-brand-200 bg-brand-50/60 p-4 fade-in">
+        <div className="mt-3 rounded-2xl border border-navy-200 bg-navy-50/60 p-4 fade-in">
           <div className="flex items-center gap-2 mb-2">
-            <span className="chip bg-brand-600 text-white">✨ الصياغة المقترحة</span>
+            <span className="chip bg-navy-600 text-white">✨ الصياغة المقترحة</span>
           </div>
-          <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-ink-900 bg-white rounded-xl p-3 border border-brand-100">
+          <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-ink-900 bg-white rounded-xl p-3 border border-navy-100">
             {draft}
           </pre>
           <div className="flex flex-wrap gap-2 mt-3">

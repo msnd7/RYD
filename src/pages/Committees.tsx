@@ -35,7 +35,7 @@ export default function Committees() {
             const canAdd = canManage || members.some((m) => m.id === user?.id)
 
             return (
-              <div key={c.id} className="rounded-2xl border border-slate-200 p-5 hover:shadow-soft transition">
+              <div key={c.id} className="rounded-2xl border border-line p-5 hover:shadow-soft transition">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="font-display font-extrabold text-[16px]">{c.name}</h3>
@@ -50,7 +50,7 @@ export default function Committees() {
                   <div className="flex flex-wrap gap-1.5">
                     {members.length === 0 && <span className="text-[12px] text-ink-300">لم يُسكَّن أحد بعد — من صفحة فريق العمل</span>}
                     {members.map((m) => (
-                      <span key={m.id} className={`chip ${m.id === c.leaderId ? 'bg-brand-600 text-white' : 'bg-slate-100 text-ink-700'}`}>
+                      <span key={m.id} className={`chip ${m.id === c.leaderId ? 'bg-navy-600 text-white' : 'bg-line text-ink-700'}`}>
                         {m.id === c.leaderId && '⭐ '}{m.name}
                       </span>
                     ))}
@@ -59,12 +59,12 @@ export default function Committees() {
 
                 <div className="mt-4 grid grid-cols-4 gap-1.5 text-center">
                   {[
-                    ['منجز', tc.done, 'text-olive-700'],
-                    ['جارٍ', tc.pending, 'text-brand-700'],
-                    ['متعثر', tc.stuck, 'text-rose-600'],
-                    ['مؤجل', tc.postponed, 'text-gold-600'],
+                    ['منجز', tc.done, 'text-navy-800'],
+                    ['جارٍ', tc.pending, 'text-navy-700'],
+                    ['متعثر', tc.stuck, 'text-orange-600'],
+                    ['مؤجل', tc.postponed, 'text-orange-600'],
                   ].map(([l, v, cls]) => (
-                    <div key={l as string} className="rounded-xl bg-slate-50 py-2">
+                    <div key={l as string} className="rounded-xl bg-navy-50 py-2">
                       <div className={`text-base font-display font-black tabular-nums ${cls}`}>{v as number}</div>
                       <div className="text-[10px] font-bold text-ink-500">{l as string}</div>
                     </div>
@@ -76,10 +76,10 @@ export default function Committees() {
                     {tasks.filter((t) => t.status !== 'done').slice(0, 3).map((t) => {
                       const d = dueLabel(t.dueDate)
                       return (
-                        <li key={t.id} className="flex items-center gap-2 text-[12px] bg-slate-50 rounded-xl px-3 py-2">
+                        <li key={t.id} className="flex items-center gap-2 text-[12px] bg-navy-50 rounded-xl px-3 py-2">
                           <Badge tone={KIND_TONE[t.kind]}>{KIND_LABEL[t.kind]}</Badge>
                           <span className="flex-1 font-bold truncate">{t.title}</span>
-                          <span className={`text-[11px] font-bold ${d.tone === 'bad' ? 'text-rose-600' : 'text-ink-500'}`}>{d.text}</span>
+                          <span className={`text-[11px] font-bold ${d.tone === 'bad' ? 'text-orange-600' : 'text-ink-500'}`}>{d.text}</span>
                         </li>
                       )
                     })}
@@ -90,7 +90,7 @@ export default function Committees() {
                   {canAdd && <button className="btn-primary btn-sm" onClick={() => setTaskFor(c)}>＋ مهمة للجنة</button>}
                   {canManage && <button className="btn-ghost btn-sm" onClick={() => { setEditing(c); setOpen(true) }}>تعديل</button>}
                   {isDirector && (
-                    <button className="btn-sm px-2 rounded-lg text-rose-600 hover:bg-rose-50" onClick={() => {
+                    <button className="btn-sm px-2 rounded-lg text-orange-600 hover:bg-orange-50" onClick={() => {
                       if (!confirm(`حذف ${c.name}؟ ستبقى المهام المرتبطة بها.`)) return
                       set((d) => {
                         d.committees = d.committees.filter((x) => x.id !== c.id)

@@ -112,12 +112,12 @@ export default function Tasks({ scope }: { scope?: 'complex' }) {
             hint="أضف مهمة أو قرارًا أو توصية، وحدّد اللجنة والمسؤول والتاريخ."
             action={<button className="btn-primary btn-sm" onClick={() => setOpen(true)}>＋ إضافة بند</button>} />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-line">
             {list.map((t) => {
               const d = dueLabel(t.dueDate)
               const canEdit = isDirector || user?.role === 'supervisor' || t.assigneeId === user?.id || t.createdBy === user?.id
               return (
-                <li key={t.id} className="px-5 py-4 hover:bg-brand-50/30 transition">
+                <li key={t.id} className="px-5 py-4 hover:bg-navy-50/30 transition">
                   <div className="flex flex-wrap items-start gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -125,13 +125,13 @@ export default function Tasks({ scope }: { scope?: 'complex' }) {
                         <h4 className={`font-extrabold text-[14.5px] ${t.status === 'done' ? 'line-through text-ink-500' : ''}`}>{t.title}</h4>
                       </div>
                       {t.details && <p className="text-[12.5px] text-ink-500 mt-1.5 leading-6 whitespace-pre-wrap">{t.details}</p>}
-                      {t.note && <p className="text-[12px] text-gold-700 bg-gold-50 rounded-lg px-2.5 py-1.5 mt-2">📌 {t.note}</p>}
+                      {t.note && <p className="text-[12px] text-orange-700 bg-orange-50 rounded-lg px-2.5 py-1.5 mt-2">📌 {t.note}</p>}
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2.5 text-[11.5px] text-ink-500 font-bold">
                         {isComplex && <span>🕌 {mosqueName(db, t.mosqueId)}</span>}
                         <span>🏷️ {committeeName(db, t.committeeId)}</span>
                         <span>👤 {personName(db, t.assigneeId)}</span>
                         <span>📅 {fmtDate(t.dueDate)}</span>
-                        <span className={d.tone === 'bad' ? 'text-rose-600' : d.tone === 'warn' ? 'text-gold-600' : ''}>
+                        <span className={d.tone === 'bad' ? 'text-orange-600' : d.tone === 'warn' ? 'text-orange-600' : ''}>
                           ⏰ {t.status === 'done' ? 'أُنجزت' : d.text}
                         </span>
                         <span className="text-ink-300">🔔 تنبيه قبل {t.remindBefore} يوم</span>
@@ -142,17 +142,17 @@ export default function Tasks({ scope }: { scope?: 'complex' }) {
                       <select value={t.status} onChange={(e) => setStatus(t.id, e.target.value as TaskStatus)}
                         disabled={!canEdit}
                         className={`rounded-xl px-3 py-2 text-[12px] font-black border-0 outline-none cursor-pointer
-                          ${t.status === 'done' ? 'bg-olive-100 text-olive-700'
-                            : t.status === 'stuck' ? 'bg-rose-100 text-rose-700'
-                            : t.status === 'postponed' ? 'bg-gold-100 text-gold-700'
-                            : 'bg-brand-100 text-brand-700'}`}>
+                          ${t.status === 'done' ? 'bg-navy-100 text-navy-800'
+                            : t.status === 'stuck' ? 'bg-orange-100 text-orange-700'
+                            : t.status === 'postponed' ? 'bg-orange-100 text-orange-700'
+                            : 'bg-navy-100 text-navy-700'}`}>
                         {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                       </select>
                       {canEdit && (
                         <>
                           <button className="btn-ghost btn-sm" onClick={() => { setEditing(t); setOpen(true) }}>تعديل</button>
                           {(isDirector || t.createdBy === user?.id) && (
-                            <button className="btn-sm text-rose-600 hover:bg-rose-50 rounded-lg px-2" onClick={() => remove(t.id)}>حذف</button>
+                            <button className="btn-sm text-orange-600 hover:bg-orange-50 rounded-lg px-2" onClick={() => remove(t.id)}>حذف</button>
                           )}
                         </>
                       )}
@@ -204,7 +204,9 @@ function TaskModal({ open, onClose, task, mosqueId, allowMosquePick }: {
 
   const committees = committeesOf(db, mos)
   const people = staffOf(db, mos)
-  const peopleInCommittee = committeeId ? people.filter((p) => p.committeeIds.includes(committeeId)) : people
+  const inCommittee = committeeId ? people.filter((p) => p.committeeIds.includes(committeeId)) : people
+  // إن لم يكن للجنة أعضاء بعد، تُعرض قائمة فريق المسجد كاملة حتى لا يتعذّر الإسناد
+  const peopleInCommittee = inCommittee.length ? inCommittee : people
 
   /** اختيار المسؤول يملأ لجنته تلقائيًا */
   const pickAssignee = (pid: string) => {
@@ -272,7 +274,10 @@ function TaskModal({ open, onClose, task, mosqueId, allowMosquePick }: {
             <Select value={committeeId} onChange={pickCommittee} placeholder="اختر اللجنة…"
               options={committees.map((c) => ({ value: c.id, label: c.name }))} />
           </Field>
-          <Field label="الشخص المسؤول" required hint="اختيار الشخص يملأ لجنته تلقائيًا">
+          <Field label="الشخص المسؤول" required
+            hint={committeeId && inCommittee.length === 0
+              ? 'لا يوجد أعضاء مسكّنون في هذه اللجنة — تظهر قائمة فريق المسجد كاملة'
+              : 'اختيار الشخص يملأ لجنته تلقائيًا'}>
             <Select value={assigneeId} onChange={pickAssignee} placeholder="اختر المسؤول…"
               options={peopleInCommittee.map((p) => ({ value: p.id, label: `${p.name} — ${p.jobTitle}` }))} />
           </Field>

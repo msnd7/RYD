@@ -8,26 +8,26 @@ export function Card({ title, subtitle, action, children, className = '', pad = 
   return (
     <section className={`card ${className}`}>
       {(title || action) && (
-        <header className="flex items-start justify-between gap-3 px-5 pt-4 pb-3 border-b border-slate-100">
+        <header className="flex flex-wrap items-start justify-between gap-3 px-4 sm:px-5 pt-4 pb-3 border-b border-line">
           <div>
             {title && <h3 className="sect-title">{title}</h3>}
             {subtitle && <p className="muted mt-0.5">{subtitle}</p>}
           </div>
-          {action && <div className="shrink-0 no-print">{action}</div>}
+          {action && <div className="no-print flex flex-wrap items-center gap-2 min-w-0 max-w-full">{action}</div>}
         </header>
       )}
-      <div className={pad ? 'p-5' : ''}>{children}</div>
+      <div className={pad ? 'p-4 sm:p-5' : ''}>{children}</div>
     </section>
   )
 }
 
 /* ---------------- Stat ---------------- */
 const TONES = {
-  brand: 'from-brand-600 to-brand-800 text-white',
-  gold: 'from-gold-400 to-gold-600 text-white',
-  olive: 'from-olive-500 to-olive-700 text-white',
-  rose: 'from-rose-500 to-rose-700 text-white',
-  slate: 'from-white to-white text-ink-900 border border-slate-200',
+  brand: 'from-navy-700 to-navy-900 text-white',
+  olive: 'from-navy-500 to-navy-700 text-white',
+  gold:  'from-orange-400 to-orange-600 text-white',
+  rose:  'from-orange-600 to-orange-800 text-white',
+  slate: 'from-white to-white text-ink-900 border border-line',
 } as const
 
 export function Stat({ label, value, hint, tone = 'slate', icon }: {
@@ -50,12 +50,12 @@ export function Stat({ label, value, hint, tone = 'slate', icon }: {
 
 /* ---------------- Badge ---------------- */
 export const BADGE: Record<string, string> = {
-  ok: 'bg-olive-100 text-olive-700',
-  warn: 'bg-gold-100 text-gold-700',
-  bad: 'bg-rose-100 text-rose-700',
-  info: 'bg-brand-100 text-brand-700',
-  mute: 'bg-slate-100 text-ink-500',
-  purple: 'bg-violet-100 text-violet-700',
+  ok: 'bg-navy-100 text-navy-800',
+  info: 'bg-navy-50 text-navy-700',
+  warn: 'bg-orange-100 text-orange-700',
+  bad: 'bg-orange-500 text-white',
+  mute: 'bg-navy-50 text-ink-500',
+  purple: 'bg-navy-800 text-white',
 }
 
 export function Badge({ tone = 'mute', children, dot }: {
@@ -88,12 +88,12 @@ export function Modal({ open, onClose, title, children, footer, wide }: {
       <div className="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px]" onClick={onClose} />
       <div className={`relative w-full ${wide ? 'sm:max-w-3xl' : 'sm:max-w-lg'} max-h-[92vh] overflow-y-auto
         bg-white rounded-t-3xl sm:rounded-3xl shadow-lift pop-in`}>
-        <header className="sticky top-0 bg-white/95 backdrop-blur px-5 py-4 border-b border-slate-100 flex items-center justify-between z-10">
+        <header className="sticky top-0 bg-white/95 backdrop-blur px-5 py-4 border-b border-line flex items-center justify-between z-10">
           <h3 className="text-lg font-extrabold">{title}</h3>
-          <button onClick={onClose} className="w-9 h-9 grid place-items-center rounded-xl hover:bg-slate-100 text-ink-500" aria-label="إغلاق">✕</button>
+          <button onClick={onClose} className="w-9 h-9 grid place-items-center rounded-xl hover:bg-line text-ink-500" aria-label="إغلاق">✕</button>
         </header>
         <div className="p-5">{children}</div>
-        {footer && <footer className="sticky bottom-0 bg-white/95 backdrop-blur px-5 py-4 border-t border-slate-100 flex gap-2 justify-start">{footer}</footer>}
+        {footer && <footer className="sticky bottom-0 bg-white/95 backdrop-blur px-5 py-4 border-t border-line flex gap-2 justify-start">{footer}</footer>}
       </div>
     </div>
   )
@@ -105,7 +105,7 @@ export function Field({ label, children, hint, required }: {
 }) {
   return (
     <div>
-      <label className="label">{label} {required && <span className="text-rose-500">*</span>}</label>
+      <label className="label">{label} {required && <span className="text-orange-500">*</span>}</label>
       {children}
       {hint && <p className="mt-1 text-[11px] text-ink-500">{hint}</p>}
     </div>
@@ -143,13 +143,13 @@ export function Tabs({ value, onChange, items }: {
   value: string; onChange: (v: string) => void; items: { value: string; label: string; count?: number }[]
 }) {
   return (
-    <div className="flex gap-1 p-1 bg-slate-100/80 rounded-2xl overflow-x-auto no-print">
+    <div className="flex gap-1 p-1 bg-line/80 rounded-2xl overflow-x-auto no-print">
       {items.map((it) => (
         <button key={it.value} onClick={() => onChange(it.value)}
           className={`tab ${value === it.value ? 'tab-on' : ''}`}>
           {it.label}
           {it.count !== undefined && (
-            <span className={`mr-1.5 text-[10px] px-1.5 py-0.5 rounded-md ${value === it.value ? 'bg-brand-100 text-brand-700' : 'bg-white/70 text-ink-500'}`}>
+            <span className={`mr-1.5 text-[10px] px-1.5 py-0.5 rounded-md ${value === it.value ? 'bg-navy-100 text-navy-700' : 'bg-white/70 text-ink-500'}`}>
               {it.count}
             </span>
           )}
@@ -177,7 +177,7 @@ export function ToastHost({ children }: { children: React.ReactNode }) {
       <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 items-center no-print pointer-events-none">
         {list.map((t) => (
           <div key={t.id} className={`pop-in px-4 py-2.5 rounded-xl shadow-lift text-sm font-bold text-white
-            ${t.tone === 'ok' ? 'bg-olive-600' : t.tone === 'bad' ? 'bg-rose-600' : 'bg-brand-700'}`}>
+            ${t.tone === 'ok' ? 'bg-navy-700' : t.tone === 'bad' ? 'bg-orange-600' : 'bg-navy-700'}`}>
             {t.text}
           </div>
         ))}
@@ -193,9 +193,9 @@ export function useConfirm() {
 
 /* ---------------- Progress ---------------- */
 export function Progress({ value, tone = 'brand' }: { value: number; tone?: 'brand' | 'olive' | 'gold' | 'rose' }) {
-  const bg = { brand: 'bg-brand-600', olive: 'bg-olive-500', gold: 'bg-gold-500', rose: 'bg-rose-500' }[tone]
+  const bg = { brand: 'bg-navy-700', olive: 'bg-navy-500', gold: 'bg-orange-400', rose: 'bg-orange-600' }[tone]
   return (
-    <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+    <div className="h-2 rounded-full bg-line overflow-hidden">
       <div className={`h-full rounded-full ${bg} transition-all duration-700`} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
     </div>
   )
@@ -233,7 +233,7 @@ export function FileDrop({ onFiles, accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx
       <input ref={ref} type="file" accept={accept} multiple={multiple} className="hidden"
         onChange={(e) => handle(e.target.files)} />
       <button type="button" onClick={() => ref.current?.click()} disabled={busy}
-        className="w-full rounded-xl border-2 border-dashed border-slate-300 hover:border-brand-400 hover:bg-brand-50/40
+        className="w-full rounded-xl border-2 border-dashed border-ink-300 hover:border-navy-400 hover:bg-navy-50/40
           px-4 py-5 text-sm font-bold text-ink-500 transition">
         {busy ? 'جارٍ الرفع…' : `📎 ${label}`}
       </button>
@@ -249,12 +249,12 @@ export function FileChips({ files, onRemove }: {
   return (
     <div className="flex flex-wrap gap-2 mt-2">
       {files.map((f, i) => (
-        <span key={i} className="chip bg-slate-100 text-ink-700 max-w-[220px]">
+        <span key={i} className="chip bg-line text-ink-700 max-w-[220px]">
           {f.type.startsWith('image/')
             ? <img src={f.dataUrl} className="w-6 h-6 rounded object-cover" alt="" />
             : <span>📄</span>}
           <a href={f.dataUrl} download={f.name} className="truncate hover:underline">{f.name}</a>
-          {onRemove && <button onClick={() => onRemove(i)} className="text-rose-500 font-black no-print">×</button>}
+          {onRemove && <button onClick={() => onRemove(i)} className="text-orange-500 font-black no-print">×</button>}
         </span>
       ))}
     </div>

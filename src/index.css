@@ -1,48 +1,120 @@
+/* ===== خط ثمانية — Thmanyah Typeface ===== */
+@font-face {
+  font-family: 'Thmanyah Sans'; font-style: normal; font-weight: 300; font-display: swap;
+  src: url('./assets/fonts/thmanyahsans-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Thmanyah Sans'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('./assets/fonts/thmanyahsans-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Thmanyah Sans'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('./assets/fonts/thmanyahsans-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Thmanyah Sans'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('./assets/fonts/thmanyahsans-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Thmanyah Sans'; font-style: normal; font-weight: 800; font-display: swap;
+  src: url('./assets/fonts/thmanyahsans-Black.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Thmanyah Sans'; font-style: normal; font-weight: 900; font-display: swap;
+  src: url('./assets/fonts/thmanyahsans-Black.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Thmanyah Display'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('./assets/fonts/thmanyahserifdisplay-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Thmanyah Display'; font-style: normal; font-weight: 800; font-display: swap;
+  src: url('./assets/fonts/thmanyahserifdisplay-Black.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Thmanyah Display'; font-style: normal; font-weight: 900; font-display: swap;
+  src: url('./assets/fonts/thmanyahserifdisplay-Black.woff2') format('woff2');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    @apply bg-[#f4f7fb] text-ink-900 font-sans antialiased;
-    background-image:
-      radial-gradient(1200px 500px at 100% -10%, rgba(31,120,189,.07), transparent 60%),
-      radial-gradient(900px 400px at 0% 0%, rgba(247,164,28,.07), transparent 55%);
-    background-attachment: fixed;
+  :root {
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
   }
-  * { scrollbar-width: thin; scrollbar-color: #c8d5e2 transparent; }
-  ::-webkit-scrollbar { width: 9px; height: 9px; }
-  ::-webkit-scrollbar-thumb { background: #c8d5e2; border-radius: 9px; }
-  input, select, textarea, button { font-family: inherit; }
-  h1,h2,h3,h4 { @apply font-display; }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+  body {
+    @apply bg-canvas text-ink-900 font-sans antialiased;
+    overscroll-behavior-y: none;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  /* عناصر الشبكة والمرن لا تتمدد بسبب محتواها */
+  main :where(.grid, .flex) > * { min-width: 0; }
+  /* منع تكبير الحقول تلقائيًا في iOS */
+  @supports (-webkit-touch-callout: none) {
+    input, select, textarea { font-size: 16px !important; }
+  }
+  * { scrollbar-width: thin; scrollbar-color: #C6D4E2 transparent; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #C6D4E2; border-radius: 8px; }
+  h1, h2, h3, h4 { @apply font-display; letter-spacing: 0; }
+  ::selection { background: #FFD29E; color: #0C2A47; }
+  :focus-visible { outline: 2px solid #F0820E; outline-offset: 2px; border-radius: 8px; }
 }
 
 @layer components {
-  .card { @apply bg-white rounded-2xl shadow-soft border border-slate-200/70; }
-  .card-p { @apply card p-5; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition
-          active:scale-[.98] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap; }
-  .btn-primary { @apply btn bg-brand-700 text-white hover:bg-brand-800 shadow-soft; }
-  .btn-gold { @apply btn bg-gold-500 text-white hover:bg-gold-600 shadow-soft; }
-  .btn-olive { @apply btn bg-olive-600 text-white hover:bg-olive-700 shadow-soft; }
-  .btn-ghost { @apply btn bg-white text-ink-700 border border-slate-200 hover:bg-slate-50; }
-  .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700; }
-  .btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
-  .field { @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none
-            transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100 placeholder:text-ink-300; }
-  .label { @apply block text-[13px] font-bold text-ink-700 mb-1.5; }
+  /* ---------- الأسطح ---------- */
+  .card { @apply bg-white rounded-2xl border border-line shadow-soft min-w-0; }
+  .panel { @apply bg-white rounded-3xl border border-line shadow-soft min-w-0; }
+
+  /* ---------- الأزرار ---------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 h-11 text-[14px] font-bold
+           transition-all select-none whitespace-nowrap
+           active:scale-[.97] disabled:opacity-45 disabled:pointer-events-none;
+  }
+  .btn-primary { @apply btn bg-navy-700 text-white hover:bg-navy-800 shadow-soft; }
+  .btn-accent  { @apply btn bg-orange-500 text-white hover:bg-orange-600 shadow-glow; }
+  .btn-ghost   { @apply btn bg-white text-ink-700 border border-line hover:bg-navy-50 hover:border-navy-200; }
+  .btn-soft    { @apply btn bg-navy-50 text-navy-700 hover:bg-navy-100; }
+  .btn-danger  { @apply btn bg-orange-600 text-white hover:bg-orange-700; }
+  .btn-sm      { @apply h-9 px-3 text-[12.5px] rounded-lg gap-1.5; }
+  .btn-lg      { @apply h-[52px] px-6 text-[15px] rounded-2xl; }
+  .btn-icon    { @apply inline-grid place-items-center w-10 h-10 rounded-xl text-ink-500 hover:bg-navy-50 hover:text-navy-700 transition; }
+
+  /* ---------- الحقول ---------- */
+  .field {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 h-11 text-[14px] text-ink-900 outline-none
+           transition placeholder:text-ink-300
+           focus:border-orange-400 focus:ring-4 focus:ring-orange-100;
+  }
+  textarea.field { @apply h-auto py-3 leading-7; }
+  select.field { @apply appearance-none bg-no-repeat pl-9; background-image:
+      url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2365798E' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-size: 16px; background-position: left 12px center; }
+  .label { @apply block text-[12.5px] font-bold text-ink-700 mb-1.5; }
+
+  /* ---------- عناصر صغيرة ---------- */
   .chip { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold whitespace-nowrap; }
-  .th { @apply text-right text-[12px] font-bold text-ink-500 px-4 py-3 whitespace-nowrap; }
-  .td { @apply px-4 py-3 text-sm text-ink-900 align-middle; }
-  .row { @apply border-t border-slate-100 hover:bg-brand-50/40 transition; }
-  .tab { @apply px-4 py-2 rounded-xl text-sm font-bold text-ink-500 hover:bg-white hover:text-brand-700 transition; }
-  .tab-on { @apply bg-white text-brand-700 shadow-soft; }
-  .sect-title { @apply text-lg font-extrabold text-ink-900; }
-  .muted { @apply text-sm text-ink-500; }
+  .th { @apply text-right text-[11.5px] font-bold text-ink-500 px-4 py-3 whitespace-nowrap; }
+  .td { @apply px-4 py-3 text-[13.5px] text-ink-900 align-middle; }
+  .row { @apply border-t border-line/70 hover:bg-navy-50/50 transition; }
+  .tab { @apply px-3.5 h-9 inline-flex items-center rounded-lg text-[13px] font-bold text-ink-500 transition; }
+  .tab-on { @apply bg-white text-navy-700 shadow-soft; }
+  .sect-title { @apply text-[17px] font-extrabold text-ink-900 leading-tight; }
+  .muted { @apply text-[12.5px] text-ink-500 leading-6; }
+  .divide-line > * + * { @apply border-t border-line/70; }
 }
 
-/* ===== الطباعة: لا تُطبع صفحة المنصة كاملة، فقط منطقة التقرير ===== */
+/* ===== الطباعة: منطقة التقرير فقط ===== */
 @media print {
   @page { size: A4; margin: 12mm; }
   body { background: #fff !important; }
@@ -53,13 +125,17 @@
     padding: 0 !important; margin: 0 !important; box-shadow: none !important; border: 0 !important;
   }
   .no-print { display: none !important; }
-  .print-break { break-after: page; }
-  .card { box-shadow: none !important; border: 1px solid #dbe3ec !important; }
+  .card, .panel { box-shadow: none !important; border: 1px solid #D8E2EC !important; }
 }
 
-.fade-in { animation: fade .28s ease both; }
+/* ===== حركات ===== */
+.fade-in { animation: fade .3s ease both }
 @keyframes fade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
-.pop-in { animation: pop .3s cubic-bezier(.2,.9,.3,1.3) both; }
-@keyframes pop { from { opacity: 0; transform: scale(.94) translateY(10px) } to { opacity: 1; transform: none } }
-.bar { animation: grow .7s cubic-bezier(.2,.8,.2,1) both; }
+.pop-in { animation: pop .3s cubic-bezier(.2,.9,.3,1.25) both }
+@keyframes pop { from { opacity: 0; transform: scale(.96) translateY(10px) } to { opacity: 1; transform: none } }
+.slide-up { animation: sup .32s cubic-bezier(.2,.9,.3,1) both }
+@keyframes sup { from { transform: translateY(100%) } to { transform: none } }
+.bar { animation: grow .65s cubic-bezier(.2,.8,.2,1) both; transform-origin: bottom }
 @keyframes grow { from { transform: scaleY(0) } to { transform: scaleY(1) } }
+.shimmer { background: linear-gradient(90deg,#EEF3F9 25%,#F8FBFF 37%,#EEF3F9 63%); background-size: 400% 100%; animation: sh 1.3s infinite }
+@keyframes sh { from { background-position: 100% 50% } to { background-position: 0 50% } }

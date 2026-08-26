@@ -43,9 +43,9 @@ export default function Meetings({ scope }: { scope?: 'complex' }) {
           <Empty icon="📄" title="لا توجد محاضر" hint="سجّل مخرجات الاجتماع ليبقى موثّقًا ويسهل الرجوع إليه."
             action={<button className="btn-primary btn-sm" onClick={() => setOpen(true)}>＋ كتابة محضر</button>} />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-line">
             {list.map((m) => (
-              <li key={m.id} className="px-5 py-4 hover:bg-brand-50/30 transition">
+              <li key={m.id} className="px-5 py-4 hover:bg-navy-50/30 transition">
                 <div className="flex flex-wrap items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -65,7 +65,7 @@ export default function Meetings({ scope }: { scope?: 'complex' }) {
                     <button className="btn-ghost btn-sm" onClick={() => setView(m)}>عرض وطباعة</button>
                     {(isDirector || m.createdBy === user?.id) && <>
                       <button className="btn-ghost btn-sm" onClick={() => { setEditing(m); setOpen(true) }}>تعديل</button>
-                      <button className="btn-sm px-2 rounded-lg text-rose-600 hover:bg-rose-50" onClick={() => remove(m)}>حذف</button>
+                      <button className="btn-sm px-2 rounded-lg text-orange-600 hover:bg-orange-50" onClick={() => remove(m)}>حذف</button>
                     </>}
                   </div>
                 </div>
@@ -180,7 +180,7 @@ function MeetingModal({ open, onClose, meeting, mosqueId, isComplex }: {
               const on = (f.attendees ?? []).includes(p.id)
               return (
                 <button key={p.id} type="button" onClick={() => toggle(p.id)}
-                  className={`chip transition ${on ? 'bg-brand-700 text-white' : 'bg-slate-100 text-ink-700 hover:bg-slate-200'}`}>
+                  className={`chip transition ${on ? 'bg-navy-700 text-white' : 'bg-line text-ink-700 hover:bg-line'}`}>
                   {on ? '✓ ' : '＋ '}{p.name}
                 </button>
               )
@@ -210,7 +210,7 @@ function MeetingView({ meeting, onClose }: { meeting: Meeting; onClose: () => vo
     <Modal open onClose={onClose} title="محضر الاجتماع" wide>
       <PrintBar title={meeting.title} />
       <div id="print-area" className="mt-4">
-        <div className="border border-slate-200 rounded-2xl p-6">
+        <div className="border border-line rounded-2xl p-6">
           <ReportHeader title="محضر اجتماع" subtitle={SCOPE_LABEL[meeting.scope]} />
 
           <h2 className="font-display font-black text-xl mt-5 text-center">{meeting.title}</h2>
@@ -221,7 +221,7 @@ function MeetingView({ meeting, onClose }: { meeting: Meeting; onClose: () => vo
               ['التاريخ', `${fmtDayName(meeting.date)} ${fmtDate(meeting.date)}`],
               ['الوقت', meeting.time],
             ].map(([k, v]) => (
-              <div key={k} className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
+              <div key={k} className="rounded-xl bg-navy-50 border border-line px-4 py-3">
                 <dt className="text-[10.5px] font-bold text-ink-500">{k}</dt>
                 <dd className="font-extrabold text-[13.5px] mt-0.5">{v}</dd>
               </div>
@@ -232,7 +232,7 @@ function MeetingView({ meeting, onClose }: { meeting: Meeting; onClose: () => vo
             <h4 className="font-extrabold text-[14px] mb-2">الحاضرون ({meeting.attendees.length})</h4>
             <div className="flex flex-wrap gap-1.5">
               {meeting.attendees.map((a) => (
-                <span key={a} className="chip bg-brand-50 text-brand-700 border border-brand-100">{personName(db, a)}</span>
+                <span key={a} className="chip bg-navy-50 text-navy-700 border border-navy-100">{personName(db, a)}</span>
               ))}
             </div>
           </section>
@@ -254,8 +254,8 @@ function MeetingView({ meeting, onClose }: { meeting: Meeting; onClose: () => vo
           {meeting.decisions && (
             <section className="mt-5">
               <h4 className="font-extrabold text-[14px] mb-2">القرارات والتوصيات</h4>
-              <div className="rounded-2xl bg-olive-50 border border-olive-200 p-4">
-                <p className="text-[13px] leading-8 whitespace-pre-wrap text-olive-800 font-bold">{meeting.decisions}</p>
+              <div className="rounded-2xl bg-navy-50 border border-navy-200 p-4">
+                <p className="text-[13px] leading-8 whitespace-pre-wrap text-navy-800 font-bold">{meeting.decisions}</p>
               </div>
             </section>
           )}
@@ -263,12 +263,12 @@ function MeetingView({ meeting, onClose }: { meeting: Meeting; onClose: () => vo
           <div className="grid sm:grid-cols-2 gap-8 mt-10">
             <div>
               <p className="text-[11.5px] font-bold text-ink-500">أمين الاجتماع</p>
-              <div className="h-14 border-b border-slate-300 mt-1" />
+              <div className="h-14 border-b border-ink-300 mt-1" />
               <p className="text-[11.5px] mt-1 font-bold">{personName(db, meeting.createdBy)}</p>
             </div>
             <div>
               <p className="text-[11.5px] font-bold text-ink-500">اعتماد المدير</p>
-              <div className="h-14 border-b border-slate-300 mt-1" />
+              <div className="h-14 border-b border-ink-300 mt-1" />
             </div>
           </div>
 

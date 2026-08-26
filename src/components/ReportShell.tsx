@@ -1,3 +1,4 @@
+import logoSrc from '../assets/logo.jpg'
 import { useDb } from '../store/db'
 import { fmtDate, fmtHijri, todayISO } from '../lib/date'
 
@@ -7,10 +8,10 @@ export function ReportHeader({ title, subtitle, period }: {
 }) {
   const { db } = useDb()
   return (
-    <header className="flex items-center gap-4 border-b-2 border-brand-700 pb-4">
-      <img src="./logo.svg" width={58} height={58} alt="" />
+    <header className="flex items-center gap-4 border-b-2 border-navy-700 pb-4">
+      <img src={logoSrc} width={56} height={56} alt="" className="object-contain" />
       <div className="flex-1 min-w-0">
-        <h2 className="font-display font-black text-[19px] text-brand-800">{db.settings.complexName}</h2>
+        <h2 className="font-display font-black text-[19px] text-navy-800">{db.settings.complexName}</h2>
         <p className="text-[11px] text-ink-500">{db.settings.complexSubtitle}</p>
       </div>
       <div className="text-left shrink-0">
@@ -25,7 +26,7 @@ export function ReportHeader({ title, subtitle, period }: {
 
 export function ReportFooter({ by }: { by?: string }) {
   return (
-    <footer className="mt-6 pt-3 border-t border-slate-200 flex flex-wrap justify-between gap-2 text-[10.5px] text-ink-500">
+    <footer className="mt-6 pt-3 border-t border-line flex flex-wrap justify-between gap-2 text-[10.5px] text-ink-500">
       <span>صادر عن منصة إدارة مجمع رياض القرآن{by ? ` — أُعدّ بواسطة: ${by}` : ''}</span>
       <span>{fmtDate(todayISO())}</span>
     </footer>

@@ -2,14 +2,14 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import type { DB } from '../types'
 import { buildSeed } from '../data/seed'
 
-const KEY = 'ryd.db.v1'
+const KEY = 'ryd.db.v2'
 
 function load(): DB {
   try {
     const raw = localStorage.getItem(KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as DB
-      if (parsed && parsed.version === 1) return parsed
+      if (parsed && parsed.version === 2) return parsed
     }
   } catch { /* ignore */ }
   return buildSeed()

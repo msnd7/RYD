@@ -57,7 +57,7 @@ export function SignaturePad({ onSave, initial }: {
 
   return (
     <div>
-      <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white overflow-hidden relative">
+      <div className="rounded-2xl border-2 border-dashed border-ink-300 bg-white overflow-hidden relative">
         <canvas ref={ref} style={{ height: 170, width: '100%', touchAction: 'none' }}
           onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up} />
         {empty && (
@@ -65,7 +65,7 @@ export function SignaturePad({ onSave, initial }: {
             ✍️ وقّع هنا بإصبعك أو بالفأرة
           </span>
         )}
-        <div className="absolute bottom-2 left-3 right-3 h-px bg-slate-200 pointer-events-none" />
+        <div className="absolute bottom-2 left-3 right-3 h-px bg-line pointer-events-none" />
       </div>
       <div className="flex gap-2 mt-3 no-print">
         <button type="button" className="btn-primary btn-sm" disabled={empty}

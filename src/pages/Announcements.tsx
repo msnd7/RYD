@@ -50,14 +50,14 @@ export default function Announcements({ scope }: { scope?: 'complex' }) {
         action={canPublish && <button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ إعلان جديد</button>}
         pad={false}>
         {list.length === 0 ? <Empty icon="📣" title="لا توجد إعلانات" /> : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-line">
             {list.map((a) => (
-              <li key={a.id} className={`px-5 py-4 ${a.pinned ? 'bg-gold-50/50' : ''}`}>
+              <li key={a.id} className={`px-5 py-4 ${a.pinned ? 'bg-orange-50/50' : ''}`}>
                 <div className="flex flex-wrap items-start gap-3">
                   <span className={`w-11 h-11 shrink-0 rounded-2xl grid place-items-center text-lg
-                    ${a.target === 'all' ? 'bg-brand-100 text-brand-700'
-                      : a.target === 'mosque' ? 'bg-olive-100 text-olive-700'
-                      : a.target === 'committee' ? 'bg-gold-100 text-gold-700' : 'bg-violet-100 text-violet-700'}`}>
+                    ${a.target === 'all' ? 'bg-navy-100 text-navy-700'
+                      : a.target === 'mosque' ? 'bg-navy-100 text-navy-800'
+                      : a.target === 'committee' ? 'bg-orange-100 text-orange-700' : 'bg-navy-100 text-navy-800'}`}>
                     {a.pinned ? '📌' : '📣'}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -75,7 +75,7 @@ export default function Announcements({ scope }: { scope?: 'complex' }) {
                   {(isDirector || a.createdBy === user?.id) && (
                     <div className="flex gap-1.5 no-print">
                       <button className="btn-ghost btn-sm" onClick={() => { setEditing(a); setOpen(true) }}>تعديل</button>
-                      <button className="btn-sm px-2 rounded-lg text-rose-600 hover:bg-rose-50" onClick={() => remove(a)}>حذف</button>
+                      <button className="btn-sm px-2 rounded-lg text-orange-600 hover:bg-orange-50" onClick={() => remove(a)}>حذف</button>
                     </div>
                   )}
                 </div>
@@ -157,10 +157,10 @@ function AnnounceModal({ open, onClose, item, defaultMosque }: {
         <AiTextArea label="نص الرسالة" value={f.body ?? ''} onChange={(v) => setF({ ...f, body: v })}
           kind="announcement" rows={6} placeholder="اكتب نص الإعلان…" />
 
-        <label className="flex items-center gap-3 rounded-xl bg-gold-50 border border-gold-200 px-4 py-3 cursor-pointer">
-          <input type="checkbox" className="w-4 h-4 accent-gold-500" checked={!!f.pinned}
+        <label className="flex items-center gap-3 rounded-xl bg-orange-50 border border-orange-200 px-4 py-3 cursor-pointer">
+          <input type="checkbox" className="w-4 h-4 accent-orange-500" checked={!!f.pinned}
             onChange={(e) => setF({ ...f, pinned: e.target.checked })} />
-          <span className="text-[13px] font-bold text-gold-700">📌 تثبيت الإعلان في أعلى القائمة</span>
+          <span className="text-[13px] font-bold text-orange-700">📌 تثبيت الإعلان في أعلى القائمة</span>
         </label>
       </div>
     </Modal>

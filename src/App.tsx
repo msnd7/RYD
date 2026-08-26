@@ -3,6 +3,7 @@ import { DbProvider } from './store/db'
 import { AuthProvider, useAuth } from './store/auth'
 import { ToastHost } from './components/ui'
 import { MosqueLayout, ComplexLayout } from './components/Layout'
+import { Runtime } from './components/Runtime'
 
 import Login from './pages/Login'
 import ComplexHome from './pages/ComplexHome'
@@ -20,11 +21,22 @@ import Reports from './pages/Reports'
 import Announcements from './pages/Announcements'
 import Finance from './pages/Finance'
 import MyPage from './pages/MyPage'
+import ChangePassword from './pages/ChangePassword'
 
 function Guard({ children }: { children: JSX.Element }) {
-  const { user } = useAuth()
+  const { user, mustChangePassword } = useAuth()
   const loc = useLocation()
   if (!user) return <Navigate to="/login" replace state={{ from: loc.pathname }} />
+  // إلزام بتغيير الرمز المبدئي قبل الدخول لأي شاشة
+  if (mustChangePassword && loc.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />
+  }
+  return children
+}
+
+function RequireSession({ children }: { children: JSX.Element }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
   return children
 }
 
@@ -32,6 +44,7 @@ function Shell() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/change-password" element={<RequireSession><ChangePassword /></RequireSession>} />
       <Route path="/me" element={<Guard><MyPage /></Guard>} />
 
       <Route path="/" element={<Guard><ComplexLayout /></Guard>}>
@@ -76,6 +89,7 @@ export default function App() {
         <ToastHost>
           <Router>
             <Shell />
+            <Runtime />
           </Router>
         </ToastHost>
       </AuthProvider>

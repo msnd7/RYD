@@ -40,8 +40,8 @@ export function LoginNotice() {
 
   return (
     <div className="fixed z-[70] top-4 left-4 right-4 sm:right-auto sm:left-4 sm:w-[400px] no-print pop-in">
-      <div className="rounded-3xl bg-white shadow-lift border border-brand-100 overflow-hidden">
-        <div className="bg-gradient-to-l from-brand-700 to-brand-900 text-white px-5 py-3.5 flex items-center justify-between">
+      <div className="rounded-3xl bg-white shadow-lift border border-navy-100 overflow-hidden">
+        <div className="bg-gradient-to-l from-navy-700 to-navy-900 text-white px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">🔔</span>
             <div>
@@ -54,17 +54,17 @@ export function LoginNotice() {
           <button onClick={() => setShow(false)} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-white/15" aria-label="إغلاق">✕</button>
         </div>
 
-        <ul className="max-h-[46vh] overflow-y-auto divide-y divide-slate-100">
+        <ul className="max-h-[46vh] overflow-y-auto divide-y divide-line">
           {items.slice(0, 6).map((t) => {
             const d = dueLabel(t.dueDate)
             return (
               <li key={t.id}>
                 <button
                   onClick={() => { setShow(false); nav(`/m/${t.mosqueId}/tasks`) }}
-                  className="w-full text-right px-5 py-3 hover:bg-brand-50/60 transition">
+                  className="w-full text-right px-5 py-3 hover:bg-navy-50/60 transition">
                   <div className="flex items-start justify-between gap-3">
                     <span className="font-bold text-sm text-ink-900 leading-6">{t.title}</span>
-                    <span className={`chip shrink-0 ${d.tone === 'bad' ? 'bg-rose-100 text-rose-700' : 'bg-gold-100 text-gold-700'}`}>
+                    <span className={`chip shrink-0 ${d.tone === 'bad' ? 'bg-orange-100 text-orange-700' : 'bg-orange-100 text-orange-700'}`}>
                       {d.text}
                     </span>
                   </div>
@@ -75,8 +75,8 @@ export function LoginNotice() {
           })}
         </ul>
 
-        <div className="h-1 bg-slate-100">
-          <div className="h-full bg-gold-500 transition-all duration-1000 ease-linear"
+        <div className="h-1 bg-line">
+          <div className="h-full bg-orange-500 transition-all duration-1000 ease-linear"
             style={{ width: `${(left / (db.settings.reminderSeconds || 10)) * 100}%` }} />
         </div>
         <div className="px-5 py-2 text-[11px] text-ink-500 text-center">

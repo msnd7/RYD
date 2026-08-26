@@ -89,12 +89,12 @@ export default function Teachers() {
               hint="سجّل بيانات معلمي المسجد أولًا ليظهروا في قائمة التحضير."
               action={canManage && <button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ إضافة معلم</button>} />
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line">
               {teachers.map((t) => {
                 const r = get(t.id)
                 return (
                   <li key={t.id} className="px-5 py-3.5 flex flex-wrap items-center gap-3">
-                    <span className="w-10 h-10 rounded-xl bg-gradient-to-bl from-olive-400 to-olive-700 text-white grid place-items-center font-extrabold">
+                    <span className="w-10 h-10 rounded-xl bg-gradient-to-bl from-navy-500 to-navy-800 text-white grid place-items-center font-extrabold">
                       {t.name.replace(/^(د\.|أ\.)\s*/, '')[0]}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -106,10 +106,10 @@ export default function Teachers() {
                         <button key={s} disabled={!canManage} onClick={() => mark(t.id, s)}
                           className={`px-3 py-1.5 rounded-lg text-[11.5px] font-black transition
                             ${r?.status === s
-                              ? s === 'present' ? 'bg-olive-600 text-white'
-                                : s === 'absent' ? 'bg-rose-600 text-white'
-                                : s === 'late' ? 'bg-amber-500 text-white' : 'bg-gold-500 text-white'
-                              : 'bg-slate-100 text-ink-500 hover:bg-slate-200'}`}>
+                              ? s === 'present' ? 'bg-navy-700 text-white'
+                                : s === 'absent' ? 'bg-orange-600 text-white'
+                                : s === 'late' ? 'bg-orange-400 text-white' : 'bg-orange-500 text-white'
+                              : 'bg-line text-ink-500 hover:bg-line'}`}>
                           {TST[s].label}
                         </button>
                       ))}
@@ -128,7 +128,7 @@ export default function Teachers() {
           {teachers.length === 0 ? <Empty icon="📚" title="لا يوجد معلمون" /> : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-50"><tr>
+                <thead className="bg-navy-50"><tr>
                   <th className="th">المعلم</th><th className="th">الحلقة</th><th className="th">المستوى</th>
                   <th className="th">الطلاب</th><th className="th">الجوال</th><th className="th">التقييم</th>
                   <th className="th no-print"></th>
@@ -153,7 +153,7 @@ export default function Teachers() {
                           {canManage && <>
                             <button className="btn-ghost btn-sm" onClick={() => setEvalFor(t)}>تقييم</button>
                             <button className="btn-ghost btn-sm" onClick={() => { setEditing(t); setOpen(true) }}>تعديل</button>
-                            <button className="btn-sm px-2 rounded-lg text-rose-600 hover:bg-rose-50" onClick={() => removeTeacher(t)}>إيقاف</button>
+                            <button className="btn-sm px-2 rounded-lg text-orange-600 hover:bg-orange-50" onClick={() => removeTeacher(t)}>إيقاف</button>
                           </>}
                         </div>
                       </td>
@@ -192,14 +192,14 @@ function TeachersReport({ mid }: { mid: string }) {
             const present = r.filter((x) => x.status === 'present').length
             const rate = r.length ? Math.round((present / r.length) * 100) : 0
             return (
-              <div key={t.id} className="rounded-2xl border border-slate-200 p-4">
+              <div key={t.id} className="rounded-2xl border border-line p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h4 className="font-extrabold text-[14.5px]">{t.name}</h4>
                     <p className="text-[11.5px] text-ink-500">{t.circle} · {t.level} · {t.studentsCount} طالبًا</p>
                   </div>
                   <div className="text-left">
-                    <div className={`text-2xl font-display font-black tabular-nums ${rate >= 85 ? 'text-olive-700' : rate >= 70 ? 'text-gold-600' : 'text-rose-600'}`}>{rate}%</div>
+                    <div className={`text-2xl font-display font-black tabular-nums ${rate >= 85 ? 'text-navy-800' : rate >= 70 ? 'text-orange-600' : 'text-orange-600'}`}>{rate}%</div>
                     <div className="text-[10px] font-bold text-ink-500">نسبة الحضور</div>
                   </div>
                 </div>
@@ -212,8 +212,8 @@ function TeachersReport({ mid }: { mid: string }) {
                   ]} />
                 </div>
                 {t.evaluation && (
-                  <div className="mt-3 rounded-xl bg-brand-50 border border-brand-100 px-3.5 py-2.5">
-                    <p className="text-[12px] font-bold text-brand-800">
+                  <div className="mt-3 rounded-xl bg-navy-50 border border-navy-100 px-3.5 py-2.5">
+                    <p className="text-[12px] font-bold text-navy-800">
                       التقييم: {t.evaluation.score}/5 — {fmtDate(t.evaluation.at)}
                     </p>
                     {t.evaluation.note && <p className="text-[12px] text-ink-700 mt-1 leading-6">{t.evaluation.note}</p>}
@@ -314,7 +314,7 @@ function EvalModal({ teacher, onClose }: { teacher: Teacher | null; onClose: () 
             {[1, 2, 3, 4, 5].map((n) => (
               <button key={n} onClick={() => setScore(n)}
                 className={`flex-1 py-3 rounded-xl font-black text-lg transition
-                  ${score >= n ? 'bg-gold-400 text-white' : 'bg-slate-100 text-ink-300'}`}>★</button>
+                  ${score >= n ? 'bg-orange-400 text-white' : 'bg-line text-ink-300'}`}>★</button>
             ))}
           </div>
           <p className="text-center mt-2 text-[13px] font-bold text-ink-500">{score} من 5</p>

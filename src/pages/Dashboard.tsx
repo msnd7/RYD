@@ -50,14 +50,19 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Stat tone="brand" label="حضور اليوم" value={`${presentToday}/${staff.length}`}
           hint={notCheckedIn.length ? `${notCheckedIn.length} لم يحضّروا بعد` : 'اكتمل الحضور'} />
-        <Stat tone="olive" label="نسبة الحضور (٣٠ يومًا)" value={`${rate}%`} hint="لفريق العمل" />
-        <Stat tone="gold" label="مهام مفتوحة" value={tc.total - tc.done} hint={`${tc.late} متأخرة`} />
+        <Stat tone="olive" label="نسبة الحضور (٣٠ يومًا)" value={staff.length ? `${rate}%` : '—'} hint="لفريق العمل" />
+        <Stat tone={tc.total - tc.done > 0 ? 'gold' : 'slate'} label="مهام مفتوحة"
+          value={tc.total - tc.done} hint={tc.late ? `${tc.late} متأخرة` : 'لا توجد متأخرات'} />
         <Stat tone={tc.stuck ? 'rose' : 'slate'} label="مهام متعثرة" value={tc.stuck} hint="تحتاج تدخّلًا" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
         <Card title="حركة الحضور — آخر ١٤ يومًا" className="lg:col-span-2"
           action={<Link to={`../attendance`} className="btn-ghost btn-sm">فتح التحضير</Link>}>
+          {attRows.length === 0 ? (
+            <Empty icon="📍" title="لا توجد سجلات حضور بعد"
+              hint="يبدأ الرسم البياني بالظهور فور تسجيل أول حضور في المسجد." />
+          ) : (<>
           <BarChart data={byDay.map((d) => ({
             label: d.date.slice(8),
             values: [
@@ -72,7 +77,7 @@ export default function Dashboard() {
               { label: 'مستأذن', value: attRows.filter((a) => a.status === 'excused').length, color: C.excused },
               { label: 'غائب', value: attRows.filter((a) => a.status === 'absent').length, color: C.absent },
             ]} />
-          </div>
+          </div></>)}
         </Card>
 
         <Card title="حالة المهام">
@@ -101,7 +106,7 @@ export default function Dashboard() {
         <Card title="أقرب المواعيد" subtitle="مهام وقرارات وتوصيات" pad={false}
           action={<Link to="../tasks" className="btn-ghost btn-sm">الكل</Link>}>
           {upcoming.length === 0 ? <Empty icon="✅" title="لا توجد بنود مفتوحة" /> : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line">
               {upcoming.map((t) => {
                 const d = dueLabel(t.dueDate)
                 return (
@@ -121,7 +126,7 @@ export default function Dashboard() {
         </Card>
 
         <Card title="اللجان" pad={false} action={<Link to="../committees" className="btn-ghost btn-sm">إدارة</Link>}>
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-line">
             {committeesOf(db, mid).map((c) => {
               const ct = taskCounts(tasks.filter((t) => t.committeeId === c.id))
               const members = db.people.filter((p) => p.committeeIds.includes(c.id) && p.active).length
@@ -160,11 +165,11 @@ export default function Dashboard() {
 
           <Card title="آخر الإعلانات" pad={false} action={<Link to="../announcements" className="btn-ghost btn-sm">الكل</Link>}>
             {anns.length === 0 ? <Empty icon="📣" title="لا توجد إعلانات" /> : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-line">
                 {anns.map((a) => (
                   <li key={a.id} className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      {a.pinned && <span className="text-gold-500">📌</span>}
+                      {a.pinned && <span className="text-orange-500">📌</span>}
                       <span className="font-bold text-[13.5px]">{a.title}</span>
                     </div>
                     <p className="text-[12px] text-ink-500 mt-1 line-clamp-2 leading-6">{a.body}</p>

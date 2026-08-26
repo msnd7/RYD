@@ -70,9 +70,9 @@ export default function MosqueSettings() {
           <Field label="لون المسجد في الواجهة">
             <Select value={f.color} onChange={(v) => setF({ ...f, color: v as any })} placeholder=""
               options={[
-                { value: 'brand', label: 'أزرق' },
-                { value: 'olive', label: 'أخضر' },
-                { value: 'gold', label: 'ذهبي' },
+                { value: 'brand', label: 'أزرق غامق' },
+                { value: 'olive', label: 'أزرق متوسط' },
+                { value: 'gold', label: 'برتقالي' },
               ]} />
           </Field>
         </div>
@@ -104,9 +104,9 @@ export default function MosqueSettings() {
             🗺️ عرض على الخريطة
           </a>
         </div>
-        {test && <p className="mt-3 text-[13px] font-bold rounded-xl px-4 py-3 bg-slate-50 border border-slate-200">{test}</p>}
+        {test && <p className="mt-3 text-[13px] font-bold rounded-xl px-4 py-3 bg-navy-50 border border-line">{test}</p>}
 
-        <div className="mt-5 rounded-2xl bg-brand-50/60 border border-brand-100 p-4 text-[12.5px] leading-7 text-brand-800">
+        <div className="mt-5 rounded-2xl bg-navy-50/60 border border-navy-100 p-4 text-[12.5px] leading-7 text-navy-800">
           <b>كيف يعمل النطاق؟</b> عند ضغط المشرف على «تحضير نفسي» يقرأ الموقع من جهازه ويحسب المسافة
           بينه وبين مركز المسجد. إن كانت المسافة أقل من نصف القطر يُسجَّل الحضور تلقائيًا مع حفظ المسافة،
           وإلا تظهر له رسالة برفض التحضير.

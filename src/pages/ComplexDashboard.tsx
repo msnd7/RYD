@@ -45,7 +45,7 @@ export default function ComplexDashboard() {
       <Card title="مقارنة المساجد" subtitle="نظرة واحدة تكشف الفروق بين المساجد الثلاثة" pad={false}>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50"><tr>
+            <thead className="bg-navy-50"><tr>
               <th className="th">المسجد</th><th className="th">المشرف</th>
               <th className="th">الفريق</th><th className="th">المعلمون</th>
               <th className="th">حضور الفريق</th><th className="th">حضور المعلمين</th>

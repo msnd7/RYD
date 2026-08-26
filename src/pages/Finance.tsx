@@ -107,7 +107,7 @@ function Custodies({ mosqueId, isComplex, filter }: {
           <button className="btn-primary btn-sm" onClick={() => setOpen(true)}>＋ طلب عهدة</button></div>}
         pad={false}>
         {list.length === 0 ? <Empty icon="💳" title="لا توجد عهد" /> : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-line">
             {list.map((c) => {
               const b = custodyBalance(c)
               const overdue = c.status === 'approved' && c.closeDate < todayISO()
@@ -133,7 +133,7 @@ function Custodies({ mosqueId, isComplex, filter }: {
                         <div className="mt-3 max-w-lg">
                           <div className="flex justify-between text-[11.5px] font-bold mb-1">
                             <span>المنصرف {money(b.spent)} من {money(c.amount)}</span>
-                            <span className={b.remaining > 0 ? 'text-gold-600' : 'text-olive-700'}>
+                            <span className={b.remaining > 0 ? 'text-orange-600' : 'text-navy-800'}>
                               المتبقي {money(b.remaining)}
                             </span>
                           </div>
@@ -144,20 +144,20 @@ function Custodies({ mosqueId, isComplex, filter }: {
                       {c.expenses.length > 0 && (
                         <ul className="mt-3 space-y-1.5">
                           {c.expenses.map((e) => (
-                            <li key={e.id} className="flex flex-wrap items-center gap-2 text-[12px] bg-slate-50 rounded-xl px-3 py-2">
+                            <li key={e.id} className="flex flex-wrap items-center gap-2 text-[12px] bg-navy-50 rounded-xl px-3 py-2">
                               <span className="font-bold">{e.description}</span>
-                              <span className="tabular-nums font-black text-brand-700">{money(e.amount)}</span>
+                              <span className="tabular-nums font-black text-navy-700">{money(e.amount)}</span>
                               <span className="text-ink-500">{fmtDate(e.date)}</span>
                               {e.invoice
-                                ? <a href={e.invoice.dataUrl} download={e.invoice.name} className="chip bg-olive-100 text-olive-700">🧾 الفاتورة</a>
-                                : <span className="chip bg-rose-100 text-rose-700">بدون فاتورة</span>}
+                                ? <a href={e.invoice.dataUrl} download={e.invoice.name} className="chip bg-navy-100 text-navy-800">🧾 الفاتورة</a>
+                                : <span className="chip bg-orange-100 text-orange-700">بدون فاتورة</span>}
                             </li>
                           ))}
                         </ul>
                       )}
 
                       {c.status === 'closed' && (
-                        <p className="text-[12px] text-olive-700 font-bold mt-2">
+                        <p className="text-[12px] text-navy-800 font-bold mt-2">
                           ✔ أُقفلت بتاريخ {fmtDate(c.closedAt)} — أُعيد مبلغ {money(c.returned ?? 0)}
                         </p>
                       )}
@@ -165,7 +165,7 @@ function Custodies({ mosqueId, isComplex, filter }: {
                     </div>
 
                     <div className="text-left shrink-0">
-                      <div className="text-2xl font-display font-black tabular-nums text-brand-800">{c.amount.toLocaleString('en-US')}</div>
+                      <div className="text-2xl font-display font-black tabular-nums text-navy-800">{c.amount.toLocaleString('en-US')}</div>
                       <div className="text-[10px] font-bold text-ink-500">ريال سعودي</div>
                     </div>
                   </div>
@@ -286,7 +286,7 @@ function ExpenseModal({ custody, onClose }: { custody: Custody; onClose: () => v
       footer={<><button className="btn-primary" onClick={save}>حفظ المصروف</button>
         <button className="btn-ghost" onClick={onClose}>إلغاء</button></>}>
       <div className="space-y-4">
-        <div className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-3 text-[12.5px] font-bold text-brand-800">
+        <div className="rounded-xl bg-navy-50 border border-navy-100 px-4 py-3 text-[12.5px] font-bold text-navy-800">
           العهدة: {custody.purpose} — المتبقي {money(b.remaining)} من {money(custody.amount)}
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
@@ -339,11 +339,11 @@ function CloseModal({ custody, onClose }: { custody: Custody; onClose: () => voi
       footer={<><button className="btn-primary" onClick={save}>إقفال</button>
         <button className="btn-ghost" onClick={onClose}>إلغاء</button></>}>
       <div className="space-y-4">
-        <ul className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-[13px]">
+        <ul className="rounded-2xl bg-navy-50 border border-line p-4 space-y-2 text-[13px]">
           <li className="flex justify-between"><span className="text-ink-500">مبلغ العهدة</span><b>{money(custody.amount)}</b></li>
           <li className="flex justify-between"><span className="text-ink-500">المنصرف بفواتير</span><b>{money(b.spent)}</b></li>
-          <li className="flex justify-between border-t border-slate-200 pt-2"><span className="text-ink-500">المتبقي الواجب إعادته</span>
-            <b className="text-gold-700">{money(b.remaining)}</b></li>
+          <li className="flex justify-between border-t border-line pt-2"><span className="text-ink-500">المتبقي الواجب إعادته</span>
+            <b className="text-orange-700">{money(b.remaining)}</b></li>
         </ul>
         <Field label="المبلغ المُعاد فعليًا (ر.س)" required>
           <input type="number" className="field" value={returned} onChange={(e) => setReturned(e.target.value)} />
@@ -384,7 +384,7 @@ function Payroll({ mosqueId, isComplex }: { mosqueId: string; isComplex: boolean
         pad={false}>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50"><tr>
+            <thead className="bg-navy-50"><tr>
               <th className="th">الموظف</th>
               {!mosqueId && <th className="th">المسجد</th>}
               <th className="th">الراتب</th><th className="th">قيمة اليوم</th>
@@ -401,15 +401,15 @@ function Payroll({ mosqueId, isComplex }: { mosqueId: string; isComplex: boolean
                   <td className="td tabular-nums"><Badge tone={pay.absent ? 'bad' : 'mute'}>{pay.absent}</Badge></td>
                   <td className="td tabular-nums"><Badge tone={pay.excused ? 'warn' : 'mute'}>{pay.excused}</Badge></td>
                   <td className="td tabular-nums font-bold">{pay.deductionDays}</td>
-                  <td className="td tabular-nums font-bold text-rose-600">{pay.deduction.toLocaleString('en-US')}</td>
-                  <td className="td tabular-nums font-black text-olive-700">{pay.net.toLocaleString('en-US')}</td>
+                  <td className="td tabular-nums font-bold text-orange-600">{pay.deduction.toLocaleString('en-US')}</td>
+                  <td className="td tabular-nums font-black text-navy-800">{pay.net.toLocaleString('en-US')}</td>
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-slate-50 font-black">
+            <tfoot className="bg-navy-50 font-black">
               <tr>
                 <td className="td" colSpan={mosqueId ? 7 : 8}>الإجمالي</td>
-                <td className="td tabular-nums text-olive-700">{(totalGross - totalDed).toLocaleString('en-US')}</td>
+                <td className="td tabular-nums text-navy-800">{(totalGross - totalDed).toLocaleString('en-US')}</td>
               </tr>
             </tfoot>
           </table>
@@ -455,8 +455,8 @@ function FinanceReport({ mosqueId, isComplex }: { mosqueId: string; isComplex: b
 
         <h4 className="font-extrabold text-[14px] mt-6 mb-2">تفصيل العهد</h4>
         <div className="overflow-x-auto">
-          <table className="w-full border border-slate-200 rounded-xl overflow-hidden">
-            <thead className="bg-slate-50"><tr>
+          <table className="w-full min-w-[640px] border border-line rounded-xl overflow-hidden">
+            <thead className="bg-navy-50"><tr>
               <th className="th">الغرض</th>{!mosqueId && <th className="th">المسجد</th>}
               <th className="th">مقدّم الطلب</th><th className="th">المبلغ</th>
               <th className="th">المنصرف</th><th className="th">المتبقي</th>

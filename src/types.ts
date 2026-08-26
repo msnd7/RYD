@@ -33,11 +33,14 @@ export interface Person {
   role: Role
   committeeIds: ID[]
   salary: number
-  username: string
+  email: string                // يُستخدم للدخول
   password: string
+  mustChangePassword: boolean  // يُجبر على تغيير الرمز عند أول دخول أو بعد إعادة التعيين
   financeAccess: boolean       // تفويض مالي من المدير
   active: boolean
   hiredAt: string
+  createdBy?: ID
+  lastLoginAt?: string
   contract?: Contract
 }
 
@@ -199,7 +202,9 @@ export interface Settings {
   workDaysPerMonth: number
   absentDeductionDays: number   // خصم الغياب (يوم كامل)
   excusedDeductionDays: number  // خصم الاستئذان (نصف يوم)
-  reminderSeconds: number       // مدة ظهور الإشعار
+  reminderSeconds: number       // مدة ظهور إشعار الدخول
+  defaultPassword: string       // الرمز المبدئي عند الإضافة أو إعادة التعيين
+  pushEnabled: boolean          // تفعيل إشعارات التذكير على الجهاز
 }
 
 export interface DB {

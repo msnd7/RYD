@@ -80,7 +80,7 @@ function PersonReport({ mid }: { mid: string }) {
           period={`${fmtDate(from)} — ${fmtDate(to)}`} />
 
         <div className="mt-5 grid sm:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-slate-200 p-5 flex flex-col items-center justify-center">
+          <div className="rounded-2xl border border-line p-5 flex flex-col items-center justify-center">
             <Donut value={st.rate} tone={st.rate >= 85 ? C.olive : st.rate >= 70 ? C.gold : C.rose} sub="نسبة الحضور" />
             <p className="text-[12px] font-bold text-ink-500 mt-3">
               حضر {st.present} من {st.total} يوم عمل
@@ -123,8 +123,8 @@ function PersonReport({ mid }: { mid: string }) {
         <section className="mt-6">
           <h4 className="font-extrabold text-[14px] mb-2">البنود الموكلة</h4>
           {tasks.length === 0 ? <p className="muted">لا توجد بنود.</p> : (
-            <table className="w-full border border-slate-200 rounded-xl overflow-hidden">
-              <thead className="bg-slate-50"><tr>
+            <div className="overflow-x-auto -mx-1 px-1"><table className="w-full min-w-[520px] border border-line rounded-xl overflow-hidden">
+              <thead className="bg-navy-50"><tr>
                 <th className="th">البند</th><th className="th">النوع</th><th className="th">اللجنة</th>
                 <th className="th">الموعد</th><th className="th">الحالة</th>
               </tr></thead>
@@ -138,7 +138,7 @@ function PersonReport({ mid }: { mid: string }) {
                       <td className="td text-[12px]">{committeeName(db, t.committeeId)}</td>
                       <td className="td text-[12px]">
                         {fmtDate(t.dueDate)}
-                        {t.status !== 'done' && d.diff < 0 && <span className="text-rose-600 font-bold"> · متأخرة</span>}
+                        {t.status !== 'done' && d.diff < 0 && <span className="text-orange-600 font-bold"> · متأخرة</span>}
                       </td>
                       <td className="td"><Badge tone={
                         t.status === 'done' ? 'ok' : t.status === 'stuck' ? 'bad' : t.status === 'postponed' ? 'warn' : 'info'
@@ -147,7 +147,7 @@ function PersonReport({ mid }: { mid: string }) {
                   )
                 })}
               </tbody>
-            </table>
+            </table></div>
           )}
         </section>
 
@@ -193,9 +193,9 @@ function CommitteeReport({ mid }: { mid: string }) {
           period={`${fmtDate(from)} — ${fmtDate(to)}`} />
 
         <div className="mt-5 grid sm:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-slate-200 p-5 flex flex-col items-center">
+          <div className="rounded-2xl border border-line p-5 flex flex-col items-center">
             <Donut value={pct} tone={pct >= 70 ? C.olive : pct >= 50 ? C.gold : C.rose} sub="نسبة الإنجاز" />
-            <span className={`chip mt-3 ${grade.tone === 'ok' ? 'bg-olive-100 text-olive-700' : grade.tone === 'warn' ? 'bg-gold-100 text-gold-700' : 'bg-rose-100 text-rose-700'}`}>
+            <span className={`chip mt-3 ${grade.tone === 'ok' ? 'bg-navy-100 text-navy-800' : grade.tone === 'warn' ? 'bg-orange-100 text-orange-700' : 'bg-orange-100 text-orange-700'}`}>
               تقييم الأداء: {grade.t}
             </span>
           </div>
@@ -225,7 +225,7 @@ function CommitteeReport({ mid }: { mid: string }) {
               const mt = taskCounts(tasks.filter((t) => t.assigneeId === m.id))
               const s = attendanceStats(db, m.id, from, to)
               return (
-                <div key={m.id} className="rounded-xl border border-slate-200 px-4 py-3">
+                <div key={m.id} className="rounded-xl border border-line px-4 py-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-[13px]">{m.id === c.leaderId ? '⭐ ' : ''}{m.name}</span>
                     <span className="text-[11.5px] font-bold text-ink-500">حضور {s.rate}%</span>
@@ -243,8 +243,8 @@ function CommitteeReport({ mid }: { mid: string }) {
         <section className="mt-6">
           <h4 className="font-extrabold text-[14px] mb-2">بنود اللجنة</h4>
           {tasks.length === 0 ? <p className="muted">لا توجد بنود.</p> : (
-            <table className="w-full border border-slate-200 rounded-xl overflow-hidden">
-              <thead className="bg-slate-50"><tr>
+            <div className="overflow-x-auto -mx-1 px-1"><table className="w-full min-w-[520px] border border-line rounded-xl overflow-hidden">
+              <thead className="bg-navy-50"><tr>
                 <th className="th">البند</th><th className="th">النوع</th><th className="th">المسؤول</th>
                 <th className="th">الموعد</th><th className="th">الحالة</th>
               </tr></thead>
@@ -261,7 +261,7 @@ function CommitteeReport({ mid }: { mid: string }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </section>
 
@@ -304,8 +304,8 @@ function MosqueReport({ mid, isComplex }: { mid: string; isComplex: boolean }) {
               ? Math.round((tAtt.filter((t) => t.status === 'present').length / tAtt.length) * 100) : 0
 
             return (
-              <div key={m.id} className="rounded-2xl border border-slate-200 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div key={m.id} className="rounded-2xl border border-line p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
                   <h3 className="font-display font-extrabold text-[17px]">{m.name}</h3>
                   <span className="text-[12px] text-ink-500 font-bold">
                     المشرف: {personName(db, m.supervisorId)}
@@ -381,10 +381,10 @@ function Uploads({ mid, isComplex }: { mid: string; isComplex: boolean }) {
             hint="ارفع تقريرك الأسبوعي أو الشهري مع صور أو ملفات الشواهد."
             action={<button className="btn-primary btn-sm" onClick={() => setOpen(true)}>＋ رفع تقرير</button>} />
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-line">
             {list.map((r) => (
               <li key={r.id} className="px-5 py-4 flex flex-wrap items-start gap-3">
-                <span className="w-11 h-11 shrink-0 rounded-2xl bg-brand-100 text-brand-700 grid place-items-center text-lg">📄</span>
+                <span className="w-11 h-11 shrink-0 rounded-2xl bg-navy-100 text-navy-700 grid place-items-center text-lg">📄</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h4 className="font-extrabold text-[14.5px]">{r.title}</h4>
@@ -401,7 +401,7 @@ function Uploads({ mid, isComplex }: { mid: string; isComplex: boolean }) {
                 <div className="flex gap-1.5 no-print">
                   <button className="btn-ghost btn-sm" onClick={() => setView(r)}>عرض وطباعة</button>
                   {(isDirector || r.createdBy === user?.id) && (
-                    <button className="btn-sm px-2 rounded-lg text-rose-600 hover:bg-rose-50" onClick={() => {
+                    <button className="btn-sm px-2 rounded-lg text-orange-600 hover:bg-orange-50" onClick={() => {
                       if (!confirm('حذف التقرير؟')) return
                       set((d) => { d.reports = d.reports.filter((x) => x.id !== r.id) })
                       toast('تم الحذف', 'info')
@@ -488,7 +488,7 @@ function ViewUpload({ report, onClose }: { report: PeriodReport; onClose: () => 
     <Modal open onClose={onClose} title="التقرير الدوري" wide>
       <PrintBar title={report.title} />
       <div id="print-area" className="mt-4">
-        <div className="border border-slate-200 rounded-2xl p-6">
+        <div className="border border-line rounded-2xl p-6">
           <ReportHeader title={report.period === 'weekly' ? 'تقرير أسبوعي' : 'تقرير شهري'}
             subtitle={report.committeeId ? committeeName(db, report.committeeId) : mosqueName(db, report.mosqueId)} />
           <h2 className="font-display font-black text-xl mt-5">{report.title}</h2>
@@ -504,10 +504,10 @@ function ViewUpload({ report, onClose }: { report: PeriodReport; onClose: () => 
               <h4 className="font-extrabold text-[14px] mb-3">الشواهد المرفقة ({report.files.length})</h4>
               <div className="grid sm:grid-cols-3 gap-3">
                 {report.files.map((f, i) => (
-                  <div key={i} className="rounded-xl border border-slate-200 overflow-hidden">
+                  <div key={i} className="rounded-xl border border-line overflow-hidden">
                     {f.type.startsWith('image/')
                       ? <img src={f.dataUrl} alt={f.name} className="w-full h-36 object-cover" />
-                      : <div className="h-36 grid place-items-center bg-slate-50 text-3xl">📄</div>}
+                      : <div className="h-36 grid place-items-center bg-navy-50 text-3xl">📄</div>}
                     <p className="text-[11px] font-bold p-2 truncate">{f.name}</p>
                   </div>
                 ))}
