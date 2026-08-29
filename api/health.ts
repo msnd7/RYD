@@ -4,5 +4,15 @@ import { isConfigured } from './_lib/db.js'
 /** يخبر المتصفح هل الخادم وقاعدة البيانات جاهزان (وضع المشاركة) أم لا (وضع محلي) */
 export default function handler(_req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store')
-  res.status(200).json({ ok: true, storage: isConfigured() ? 'database' : 'none' })
+  const sha = process.env.VERCEL_GIT_COMMIT_SHA
+  res.status(200).json({
+    ok: true,
+    storage: isConfigured() ? 'database' : 'none',
+    build: {
+      commit: sha ? sha.slice(0, 7) : null,
+      branch: process.env.VERCEL_GIT_COMMIT_REF ?? null,
+      env: process.env.VERCEL_ENV ?? 'local',
+      deployedAt: process.env.VERCEL_DEPLOYMENT_ID ? undefined : null,
+    },
+  })
 }

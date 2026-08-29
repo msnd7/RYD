@@ -1,6 +1,7 @@
 import { ensureSchema, query } from './db.js'
 import { hashPassword, normEmail } from './auth.js'
 import { buildSeed, DEFAULT_PASSWORD } from '../../src/data/seed.js'
+import { migrate } from '../../src/lib/migrate.js'
 import type { DB, Person } from '../../src/types'
 
 export const DOC_ID = 'main'
@@ -27,7 +28,23 @@ export async function loadState(): Promise<LoadedState> {
   const rows = await query<{ doc: StoredDB; version: string }>(
     'SELECT doc, version FROM ryd_state WHERE id = $1', [DOC_ID],
   )
-  if (rows.length) return { doc: rows[0].doc, version: Number(rows[0].version) }
+  if (rows.length) {
+    const doc = rows[0].doc
+    const version = Number(rows[0].version)
+    // ترقية الوثائق القديمة دون فقد أي بيان، وحفظها إن تغيّرت
+    if (migrate(doc)) {
+      const saved = await saveState(doc, version, 'migration')
+      if (saved) return saved
+      // تعارض: أعِد القراءة، وستُرقّى في الطلب التالي
+      const again = await query<{ doc: StoredDB; version: string }>(
+        'SELECT doc, version FROM ryd_state WHERE id = $1', [DOC_ID],
+      )
+      const d2 = again[0].doc
+      migrate(d2)
+      return { doc: d2, version: Number(again[0].version) }
+    }
+    return { doc, version }
+  }
 
   const doc = initialDoc()
   await query(

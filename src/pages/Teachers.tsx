@@ -22,7 +22,7 @@ const TST: Record<TeacherAttStatus, { label: string; on: string }> = {
 const ORDER: TeacherAttStatus[] = ['present', 'late', 'excused', 'absent']
 
 /** المراحل الدراسية لطلاب الحلقة */
-export const STAGES = ['الابتدائية', 'المتوسطة', 'الثانوية', 'الجامعيون', 'الموظفون'] as const
+export const STAGES: string[] = ['الابتدائية', 'المتوسطة', 'الثانوية', 'الجامعيون', 'الموظفون']
 
 export default function Teachers() {
   const { mid = '' } = useParams()
@@ -424,7 +424,11 @@ function TeacherModal({ open, onClose, teacher, mosqueId }: {
         </Field>
         <Field label="المرحلة" required>
           <Select value={f.level ?? ''} onChange={(v) => setF({ ...f, level: v })} placeholder="اختر المرحلة…"
-            options={STAGES.map((v) => ({ value: v, label: v }))} />
+            options={[
+              ...STAGES.map((v) => ({ value: v, label: v })),
+              // قيمة مسجّلة سابقًا خارج القائمة تبقى ظاهرة فلا تضيع
+              ...(f.level && !STAGES.includes(f.level) ? [{ value: f.level, label: `${f.level} (مسجّلة سابقًا)` }] : []),
+            ]} />
         </Field>
         <Field label="عدد الطلاب">
           <input type="number" inputMode="numeric" className="field" value={f.studentsCount ?? 0}

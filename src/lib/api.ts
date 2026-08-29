@@ -47,12 +47,21 @@ export const apiPut = <T>(p: string, body?: unknown) =>
 
 /* ================= اكتشاف الوضع ================= */
 
+export type BuildInfo = { commit: string | null; branch: string | null; env: string }
+
 let modePromise: Promise<StorageMode> | null = null
+let build: BuildInfo | null = null
+
+/** معلومات النسخة المنشورة على الخادم (بعد أول اتصال) */
+export const buildInfo = () => build
 
 export function detectMode(): Promise<StorageMode> {
   if (!modePromise) {
-    modePromise = apiGet<{ ok: boolean; storage: string }>('/health')
-      .then((r) => (r?.storage === 'database' ? 'remote' : 'local'))
+    modePromise = apiGet<{ ok: boolean; storage: string; build?: BuildInfo }>('/health')
+      .then((r) => {
+        build = r?.build ?? null
+        return r?.storage === 'database' ? 'remote' : 'local'
+      })
       .catch(() => 'local' as StorageMode)
   }
   return modePromise

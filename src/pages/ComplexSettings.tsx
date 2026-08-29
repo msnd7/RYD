@@ -9,6 +9,7 @@ import {
   onPwaChange, promptInstall, requestNotificationPermission, showNotification,
 } from '../lib/pwa'
 import { fmtDate } from '../lib/date'
+import { buildInfo } from '../lib/api'
 import { mosqueName } from '../lib/selectors'
 import type { Person } from '../types'
 
@@ -326,7 +327,7 @@ function Guide({ title, steps }: { title: string; steps: string[] }) {
 
 /* ================= البيانات ================= */
 function DataSettings() {
-  const { db, reset, exportJson, importJson } = useDb()
+  const { db, mode, reset, exportJson, importJson } = useDb()
   const toast = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -337,8 +338,42 @@ function DataSettings() {
     ['المحاضر', db.meetings.length], ['العهد', db.custodies.length],
   ] as const
 
+  const build = buildInfo()
+
   return (
     <div className="space-y-5">
+      <Card title="حالة النشر" subtitle="أي نسخة تعمل الآن وأين تُحفظ البيانات">
+        <ul className="space-y-2.5 text-[13px]">
+          <li className="flex flex-wrap justify-between gap-2">
+            <span className="text-ink-500">مكان الحفظ</span>
+            <Badge tone={mode === 'remote' ? 'ok' : 'warn'}>
+              {mode === 'remote' ? 'قاعدة بيانات على الخادم — مشتركة ودائمة' : 'متصفح هذا الجهاز فقط'}
+            </Badge>
+          </li>
+          <li className="flex flex-wrap justify-between gap-2">
+            <span className="text-ink-500">البيئة</span>
+            <b>{build?.env === 'production' ? 'الإنتاج (الموقع المنشور)'
+              : build?.env === 'preview' ? 'معاينة' : build?.env ?? 'محلية'}</b>
+          </li>
+          {build?.branch && (
+            <li className="flex flex-wrap justify-between gap-2">
+              <span className="text-ink-500">الفرع المنشور</span>
+              <b className="text-left truncate max-w-[60%]" dir="ltr">{build.branch}</b>
+            </li>
+          )}
+          {build?.commit && (
+            <li className="flex flex-wrap justify-between gap-2">
+              <span className="text-ink-500">رقم النسخة</span>
+              <b className="num" dir="ltr">{build.commit}</b>
+            </li>
+          )}
+        </ul>
+        <p className="muted mt-3">
+          كل تعديل يُرفع على المستودع يُنشر تلقائيًا هنا، ولا يمسّ البيانات المحفوظة —
+          فالبيانات في قاعدة مستقلة عن نسخة الموقع.
+        </p>
+      </Card>
+
       <Card title="محتوى قاعدة البيانات">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {counts.map(([l, v]) => (

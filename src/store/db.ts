@@ -1,19 +1,24 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { DB } from '../types'
 import { buildSeed } from '../data/seed'
+import { migrated } from '../lib/migrate'
 import { ApiError, apiGet, apiPut, detectMode, type StorageMode } from '../lib/api'
 
 const KEY = 'ryd.db.v3'
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v))
 
+const LEGACY_KEYS = ['ryd.db.v2', 'ryd.db.v1']
+
 function loadLocal(): DB {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as DB
-      if (parsed && parsed.version === 3) return parsed
-    }
-  } catch { /* تجاهل */ }
+  // النسخة الحالية، ثم النسخ الأقدم — تُرقّى ولا تُهدر
+  for (const k of [KEY, ...LEGACY_KEYS]) {
+    try {
+      const raw = localStorage.getItem(k)
+      if (!raw) continue
+      const parsed = JSON.parse(raw)
+      if (parsed?.people && parsed?.mosques) return migrated(parsed)
+    } catch { /* تالفة — جرّب التالية */ }
+  }
   return buildSeed()
 }
 
@@ -73,7 +78,7 @@ export function DbProvider({ children }: { children: React.ReactNode }) {
         const r = await apiGet<{ doc: DB; version: number }>('/state')
         if (!alive) return
         versionRef.current = r.version
-        applyDb(r.doc)
+        applyDb(migrated(r.doc))
         setNeedsLogin(false)
         setSync('idle')
       } catch (e) {
