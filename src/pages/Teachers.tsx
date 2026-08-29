@@ -517,7 +517,7 @@ function EvalModal({ teacher, onClose }: { teacher: Teacher | null; onClose: () 
       footer={<><button className="btn-primary" onClick={save}>حفظ التقييم</button>
         <button className="btn-ghost" onClick={onClose}>إلغاء</button></>}>
       <div className="space-y-4">
-        <Field label="الدرجة">
+        <Field label="درجة التقييم">
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5].map((n) => (
               <button key={n} onClick={() => setScore(n)}

@@ -15,7 +15,7 @@ const markSent = (key: string) => {
 
 /**
  * يفحص قائمة المهام القريبة أو المتأخرة ويرسل إشعارًا واحدًا
- * لكل بند في اليوم. يعمل ما دام التطبيق مفتوحًا أو مثبّتًا في الخلفية.
+ * لكل مهمة في اليوم. يعمل ما دام التطبيق مفتوحًا أو مثبّتًا في الخلفية.
  */
 export async function runReminderCheck(db: DB, user: Person | null) {
   if (!user || !db.settings.pushEnabled) return
@@ -31,7 +31,7 @@ export async function runReminderCheck(db: DB, user: Person | null) {
     const t = fresh[0]
     const d = daysBetween(today, t.dueDate)
     await showNotification(
-      d < 0 ? '⚠️ بند تجاوز موعده' : d === 0 ? '⏰ بند مستحق اليوم' : '🔔 موعد يقترب',
+      d < 0 ? '⚠️ مهمة تجاوزت موعدها' : d === 0 ? '⏰ مهمة مستحقة اليوم' : '🔔 موعد يقترب',
       `${t.title} — ${fmtDate(t.dueDate)}`,
       { tag: `t-${t.id}`, url: `./#/m/${t.mosqueId}/tasks` },
     )
@@ -39,7 +39,7 @@ export async function runReminderCheck(db: DB, user: Person | null) {
     const late = fresh.filter((t) => daysBetween(today, t.dueDate) < 0).length
     await showNotification(
       '🔔 لديك مواعيد تحتاج متابعتك',
-      `${fresh.length} بندًا${late ? ` منها ${late} متأخرة` : ''} — افتح المنصة للاطلاع.`,
+      `${fresh.length} مهمة${late ? ` منها ${late} متأخرة` : ''} — افتح المنصة للاطلاع.`,
       { tag: 'due-digest', url: './#/me' },
     )
   }

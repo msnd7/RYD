@@ -25,7 +25,11 @@ function Shell({ groups, title, subtitle, back, brand }: {
 }) {
   const [open, setOpen] = useState(false)
   const loc = useLocation()
-  useEffect(() => { setOpen(false) }, [loc.pathname])
+  useEffect(() => {
+    setOpen(false)
+    // كل شاشة تبدأ من أعلاها، فلا تفتح شاشة جديدة من منتصفها
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [loc.pathname])
 
   const visibleGroups = groups
     .map((g) => ({ ...g, items: g.items.filter((i) => !i.hide) }))
@@ -38,8 +42,13 @@ function Shell({ groups, title, subtitle, back, brand }: {
       <LoginNotice />
 
       <div className="flex">
+        {/*
+          على الحواسيب: عمود لاصق أسفل الشريط العلوي مباشرة (لا يعلوه عند النزول).
+          على الجوال والتابلت: درج ينزلق من اليمين فوق المحتوى.
+        */}
         <aside
-          className={`no-print fixed lg:sticky top-0 z-50 h-[100dvh] w-[262px] shrink-0 bg-surface border-l border-line
+          className={`no-print fixed lg:sticky top-0 lg:top-[var(--hdr)] z-50 lg:z-30
+            h-[100dvh] lg:h-[calc(100dvh-var(--hdr))] w-[262px] shrink-0 bg-surface border-l border-line
             flex flex-col transition-transform duration-300 will-change-transform
             ${open ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}
         >
@@ -330,9 +339,9 @@ export function MemberLayout() {
     {
       title: 'عملي اليومي',
       items: [
-        { to: '/my', label: 'قائمة المهام', short: 'المهام', Icon: IconCheck, badge: myOpen, primary: true },
+        { to: '/my', label: 'لوحة لجنتي', short: 'لجنتي', Icon: IconLayers, badge: myCustodies, primary: true },
+        { to: '/my/tasks', label: 'قائمة المهام', short: 'المهام', Icon: IconCheck, badge: myOpen, primary: true },
         { to: '/my/attendance', label: 'التحضير', short: 'التحضير', Icon: IconPin, primary: true },
-        { to: '/my/committee', label: 'لجنتي', short: 'لجنتي', Icon: IconLayers, badge: myCustodies, primary: true },
       ],
     },
     {

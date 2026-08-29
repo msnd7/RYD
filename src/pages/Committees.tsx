@@ -77,7 +77,7 @@ export default function Committees() {
                   {(canManage || canAct) && (
                     <Menu items={[
                       ...(canAct ? [
-                        { label: 'إضافة بند للجنة', icon: '＋', onClick: () => setTaskFor(c) },
+                        { label: 'إضافة مهمة للجنة', icon: '＋', onClick: () => setTaskFor(c) },
                         { label: 'طلب صرف عهدة', icon: '💳', onClick: () => setCustodyFor(c) },
                       ] : []),
                       ...(canManage ? [
@@ -102,7 +102,7 @@ export default function Committees() {
                 <div className="mt-4">
                   <div className="flex justify-between text-[11px] font-bold text-ink-500 mb-1.5">
                     <span>الإنجاز</span>
-                    <span className="num text-ink-900">{tc.total ? `${pct}% · ${tc.done} من ${tc.total}` : 'لا توجد بنود'}</span>
+                    <span className="num text-ink-900">{tc.total ? `${pct}% · ${tc.done} من ${tc.total}` : 'لا توجد مهام'}</span>
                   </div>
                   <Progress value={pct} tone={pct >= 70 ? 'brand' : pct >= 40 ? 'olive' : 'gold'} />
                   <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -167,7 +167,7 @@ export default function Committees() {
                 )}
               </div>
 
-              {/* أقرب بنود اللجنة */}
+              {/* أقرب مهام اللجنة */}
               {tasks.filter((t) => t.status !== 'done').length > 0 && (
                 <ul className="border-t border-line divide-y divide-line">
                   {tasks.filter((t) => t.status !== 'done').slice(0, 3).map((t) => {
@@ -233,7 +233,7 @@ function CommitteeModal({ open, onClose, committee, mosqueId }: {
         <Field label="هدف اللجنة">
           <textarea className="field leading-7" rows={3} value={goal} onChange={(e) => setGoal(e.target.value)} />
         </Field>
-        <Field label="رئيس اللجنة" hint="يُقترح تلقائيًا كمسؤول عند إضافة بند للجنة">
+        <Field label="رئيس اللجنة" hint="يُقترح تلقائيًا كمسؤول عند إضافة مهمة للجنة">
           <Select value={leaderId} onChange={setLeaderId} placeholder="بدون"
             options={staffOf(db, mosqueId).map((p) => ({ value: p.id, label: `${p.name} — ${p.jobTitle}` }))} />
         </Field>
@@ -261,7 +261,7 @@ function QuickTaskModal({ committee, onClose }: { committee: Committee | null; o
   const pool = members.length ? members : staffOf(db, committee.mosqueId)
 
   const save = () => {
-    if (!title.trim()) return toast('اكتب عنوان البند.', 'bad')
+    if (!title.trim()) return toast('اكتب عنوان المهمة.', 'bad')
     const aid = assigneeId || committee.leaderId || pool[0]?.id
     if (!aid) return toast('لا يوجد أعضاء لتفويضهم. أضف موظفين للمسجد أولًا.', 'bad')
     set((d) => d.tasks.push({
@@ -269,12 +269,12 @@ function QuickTaskModal({ committee, onClose }: { committee: Committee | null; o
       title: title.trim(), details: '', kind, status: 'pending', dueDate,
       remindBefore: remind, createdBy: user!.id, createdAt: todayISO(),
     }))
-    toast(`أُضيف البند وفُوِّض إلى ${personName(db, aid)}`)
+    toast(`أُضيفت المهمة وفُوِّضت إلى ${personName(db, aid)}`)
     onClose()
   }
 
   return (
-    <Modal open onClose={onClose} title={`بند جديد — ${committee.name}`}
+    <Modal open onClose={onClose} title={`مهمة جديدة — ${committee.name}`}
       footer={<><button className="btn-primary" onClick={save}>إضافة وتفويض</button>
         <button className="btn-ghost" onClick={onClose}>إلغاء</button></>}>
       <div className="space-y-4">
@@ -286,7 +286,7 @@ function QuickTaskModal({ committee, onClose }: { committee: Committee | null; o
             <Select value={kind} onChange={(v) => setKind(v as TaskKind)} placeholder=""
               options={Object.entries(KIND_LABEL).map(([v, l]) => ({ value: v, label: l }))} />
           </Field>
-          <Field label="تفويض إلى" hint={members.length ? 'من أعضاء اللجنة' : 'لا يوجد أعضاء مسكّنون — تظهر قائمة فريق المسجد'}>
+          <Field label="الموظف المسؤول" hint={members.length ? 'من أعضاء اللجنة' : 'لا يوجد أعضاء مسكّنون — تظهر قائمة موظفي المسجد'}>
             <Select value={assigneeId} onChange={setAssigneeId}
               placeholder={committee.leaderId ? `${personName(db, committee.leaderId)} (رئيس اللجنة)` : 'اختر…'}
               options={pool.map((p) => ({ value: p.id, label: `${p.name} — ${p.jobTitle}` }))} />

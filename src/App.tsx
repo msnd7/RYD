@@ -24,7 +24,7 @@ import Reports from './pages/Reports'
 import Announcements from './pages/Announcements'
 import Finance from './pages/Finance'
 import MyPage from './pages/MyPage'
-import MyCommittee from './pages/MyCommittee'
+import CommitteeDashboard from './pages/CommitteeDashboard'
 
 function Booting() {
   return (
@@ -137,9 +137,11 @@ function Shell() {
 
       {/* ===== مساحة الموظف وعضو اللجنة ===== */}
       <Route path="/my" element={<Guard><MemberLayout /></Guard>}>
-        <Route index element={<Tasks scope="mine" />} />
+        {/* أول شاشة لعضو اللجنة: لوحة تحكم لجنته */}
+        <Route index element={<CommitteeDashboard />} />
+        <Route path="tasks" element={<Tasks scope="mine" />} />
         <Route path="attendance" element={<Attendance scope="mine" />} />
-        <Route path="committee" element={<MyCommittee />} />
+        <Route path="committee" element={<Navigate to="/my" replace />} />
         <Route path="announcements" element={<Announcements scope="mine" />} />
         <Route path="report" element={<Reports scope="mine" />} />
       </Route>

@@ -102,7 +102,7 @@ function PersonReport({ mid, lockToSelf }: { mid: string; lockToSelf?: boolean }
             <Stat label="أيام الحضور" value={st.present} tone="olive" />
             <Stat label="أيام الغياب" value={st.absent} tone={st.absent ? 'rose' : 'slate'} />
             <Stat label="أيام الاستئذان" value={st.excused} tone="gold" />
-            <Stat label="بنود موكلة إليه" value={tc.total} tone="brand" />
+            <Stat label="مهام موكلة إليه" value={tc.total} tone="brand" />
             <Stat label="منجزة" value={tc.done} />
             <Stat label="متعثرة / متأخرة" value={`${tc.stuck} / ${tc.late}`} tone={tc.stuck || tc.late ? 'rose' : 'slate'} />
           </div>
@@ -133,11 +133,11 @@ function PersonReport({ mid, lockToSelf }: { mid: string; lockToSelf?: boolean }
         )}
 
         <section className="mt-6">
-          <h4 className="font-extrabold text-[14px] mb-2">البنود الموكلة</h4>
-          {tasks.length === 0 ? <p className="muted">لا توجد بنود.</p> : (
+          <h4 className="font-extrabold text-[14px] mb-2">المهام الموكلة</h4>
+          {tasks.length === 0 ? <p className="muted">لا توجد مهام.</p> : (
             <div className="overflow-x-auto -mx-1 px-1"><table className="w-full min-w-[520px] border border-line rounded-xl overflow-hidden">
               <thead className="bg-navy-50"><tr>
-                <th className="th">البند</th><th className="th">النوع</th><th className="th">اللجنة</th>
+                <th className="th">المهمة</th><th className="th">النوع</th><th className="th">اللجنة</th>
                 <th className="th">الموعد</th><th className="th">الحالة</th>
               </tr></thead>
               <tbody>
@@ -214,7 +214,7 @@ function CommitteeReport({ mid }: { mid: string }) {
           <div className="sm:col-span-2">
             <p className="text-[13px] text-ink-700 leading-7">{c.goal}</p>
             <div className="grid grid-cols-2 gap-3 mt-4">
-              <Stat label="إجمالي البنود" value={tc.total} tone="brand" />
+              <Stat label="إجمالي المهام" value={tc.total} tone="brand" />
               <Stat label="منجزة" value={tc.done} tone="olive" />
               <Stat label="متعثرة" value={tc.stuck} tone={tc.stuck ? 'rose' : 'slate'} />
               <Stat label="مؤجلة" value={tc.postponed} tone="gold" />
@@ -253,11 +253,11 @@ function CommitteeReport({ mid }: { mid: string }) {
         </section>
 
         <section className="mt-6">
-          <h4 className="font-extrabold text-[14px] mb-2">بنود اللجنة</h4>
-          {tasks.length === 0 ? <p className="muted">لا توجد بنود.</p> : (
+          <h4 className="font-extrabold text-[14px] mb-2">مهام اللجنة</h4>
+          {tasks.length === 0 ? <p className="muted">لا توجد مهام.</p> : (
             <div className="overflow-x-auto -mx-1 px-1"><table className="w-full min-w-[520px] border border-line rounded-xl overflow-hidden">
               <thead className="bg-navy-50"><tr>
-                <th className="th">البند</th><th className="th">النوع</th><th className="th">المسؤول</th>
+                <th className="th">المهمة</th><th className="th">النوع</th><th className="th">المسؤول</th>
                 <th className="th">الموعد</th><th className="th">الحالة</th>
               </tr></thead>
               <tbody>
@@ -325,16 +325,16 @@ function MosqueReport({ mid, isComplex }: { mid: string; isComplex: boolean }) {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4">
-                  <Stat label="الموظفين" value={staff.length} />
+                  <Stat label="الموظفون" value={staff.length} />
                   <Stat label="المعلمون" value={teachers.length} />
-                  <Stat label="حضور الفريق" value={`${rate}%`} tone={rate >= 85 ? 'olive' : rate >= 70 ? 'gold' : 'rose'} />
+                  <Stat label="حضور الموظفين" value={`${rate}%`} tone={rate >= 85 ? 'olive' : rate >= 70 ? 'gold' : 'rose'} />
                   <Stat label="حضور المعلمين" value={`${tRate}%`} tone={tRate >= 85 ? 'olive' : tRate >= 70 ? 'gold' : 'rose'} />
                   <Stat label="إنجاز المهام" value={`${tc.total ? Math.round((tc.done / tc.total) * 100) : 0}%`} tone="brand" />
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-5 mt-5">
                   <div>
-                    <h5 className="font-bold text-[12.5px] mb-2">حالة البنود</h5>
+                    <h5 className="font-bold text-[12.5px] mb-2">حالة المهام</h5>
                     <SplitBar parts={[
                       { label: 'منجز', value: tc.done, color: C.done },
                       { label: 'قيد التنفيذ', value: tc.pending, color: C.pending },

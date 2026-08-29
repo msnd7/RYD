@@ -25,9 +25,9 @@ export default function Attendance({ scope }: { scope?: 'complex' | 'mine' }) {
   const isMine = scope === 'mine'
   const mosqueId = isComplex || isMine ? (user?.mosqueId as string) : mid
 
-  // المشرف والعضو يبدآن من «تحضيري» لأنه إجراؤهما اليومي، والمدير من «حضور الفريق»
-  const [tab, setTab] = useState<'me' | 'team' | 'leaves'>(
-    !isMine && user?.role === 'director' ? 'team' : 'me')
+  // مدير المجمع لا يحضّر نفسه — دوره متابعة سير العمل وحضور الموظفين
+  const selfCheckIn = user?.role !== 'director'
+  const [tab, setTab] = useState<'me' | 'team' | 'leaves'>(selfCheckIn ? 'me' : 'team')
   const [leaveOpen, setLeaveOpen] = useState(false)
   const [fMosque, setFMosque] = useState('')
 
@@ -39,12 +39,14 @@ export default function Attendance({ scope }: { scope?: 'complex' | 'mine' }) {
       <PageHeader
         eyebrow={isMine ? 'مساحتي' : isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
         title="التحضير"
-        description={isMine
+        description={!selfCheckIn
+          ? 'متابعة حضور الموظفين واعتماد طلبات الاستئذان. الغياب يُخصم يومًا كاملًا والاستئذان نصف يوم.'
+          : isMine
           ? 'حضّر نفسك يوميًا من داخل نطاق المسجد، وتابع نسبة حضورك وأثرها على راتبك، وارفع طلب استئذان يعتمده مدير المجمع.'
           : 'يحضّر كل موظف نفسه من حسابه داخل نطاق المسجد، ويعتمد المدير طلبات الاستئذان — والغياب يُخصم يومًا كاملًا والاستئذان نصف يوم.'}
       />
       <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
-        { value: 'me', label: 'تحضيري' },
+        ...(selfCheckIn ? [{ value: 'me' as const, label: 'تحضيري' }] : []),
         ...(canManage ? [{ value: 'team' as const, label: 'حضور الموظفين' }] : []),
         {
           value: 'leaves',
@@ -54,7 +56,7 @@ export default function Attendance({ scope }: { scope?: 'complex' | 'mine' }) {
         },
       ]} />
 
-      {tab === 'me' && <MyAttendance mosqueId={mosqueId} onLeave={() => setLeaveOpen(true)} />}
+      {tab === 'me' && selfCheckIn && <MyAttendance mosqueId={mosqueId} onLeave={() => setLeaveOpen(true)} />}
 
       {tab === 'team' && canManage && (
         <TeamAttendance mid={isComplex ? fMosque : mid} isComplex={isComplex}
@@ -199,7 +201,7 @@ function MyAttendance({ mosqueId, onLeave }: { mosqueId: string; onLeave: () => 
   )
 }
 
-/* ================= حضور الفريق ================= */
+/* ================= حضور الموظفين ================= */
 function TeamAttendance({ mid, isComplex, filter }: { mid: string; isComplex: boolean; filter: React.ReactNode }) {
   const { db, set } = useDb()
   const { user } = useAuth()

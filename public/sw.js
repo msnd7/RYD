@@ -1,5 +1,5 @@
 /* Service Worker — منصة رياض القرآن */
-const CACHE = 'ryd-v2'
+const CACHE = 'ryd-v3'
 const CORE = ['./', './index.html', './manifest.webmanifest', './logo.png', './favicon.png']
 
 self.addEventListener('install', (e) => {

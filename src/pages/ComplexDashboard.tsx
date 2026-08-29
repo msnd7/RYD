@@ -45,7 +45,7 @@ export default function ComplexDashboard() {
       <StatStrip items={[
         { label: 'الموظفون', value: rows.reduce((s, r) => s + r.staff.length, 0) },
         { label: 'المعلمون', value: rows.reduce((s, r) => s + r.teachers.length, 0) },
-        { label: 'بنود مفتوحة', value: allTc.total - allTc.done },
+        { label: 'مهام مفتوحة', value: allTc.total - allTc.done },
         { label: 'متأخرة', value: allTc.late },
         { label: 'متعثرة', value: allTc.stuck, accent: allTc.stuck > 0 },
       ]} />
@@ -118,7 +118,7 @@ export default function ComplexDashboard() {
           </div>
         </Card>
 
-        <Card title="حالة البنود في المجمع">
+        <Card title="حالة المهام في المجمع">
           <div className="flex flex-col items-center">
             <Donut value={allTc.total ? Math.round((allTc.done / allTc.total) * 100) : 0}
               tone={C.olive} sub={`${allTc.done} من ${allTc.total}`} />

@@ -12,7 +12,7 @@ import { money } from '../lib/format'
 import type { Person, Role } from '../types'
 
 const ROLE_LABEL: Record<Role, string> = {
-  director: 'مدير المجمع', supervisor: 'مشرف المسجد', member: 'عضو الموظفين',
+  director: 'مدير المجمع', supervisor: 'مشرف المسجد', member: 'موظف',
 }
 
 export default function Staff({ scope }: { scope?: 'complex' }) {
@@ -283,14 +283,14 @@ function PersonModal({ open, onClose, person, mosqueId, allowMosquePick, allowRo
     setKey(sig)
     setF(person ? { ...person } : {
       mosqueId: mosqueId || db.mosques[0].id,
-      name: '', jobTitle: allowRolePick && allowMosquePick ? 'مشرف المسجد' : 'عضو الموظفين',
+      name: '', jobTitle: allowRolePick && allowMosquePick ? 'مشرف المسجد' : 'موظف',
       phone: '', email: '',
       role: allowRolePick && allowMosquePick ? 'supervisor' : 'member',
       committeeIds: [], salary: 0,
       financeAccess: false, active: true, hiredAt: todayISO(),
       contract: {
         title: 'عقد عمل', startDate: todayISO(), salary: 0,
-        terms: 'العمل ضمن فريق المسجد وتنفيذ المهام الموكلة، والالتزام بالحضور اليومي داخل النطاق المكاني للمسجد.',
+        terms: 'العمل ضمن موظفي المسجد وتنفيذ المهام الموكلة، والالتزام بالحضور اليومي داخل النطاق المكاني للمسجد.',
       },
     })
   }
@@ -377,11 +377,11 @@ function PersonModal({ open, onClose, person, mosqueId, allowMosquePick, allowRo
                 <Select value={f.role ?? 'member'} onChange={(v) => setF({ ...f, role: v })} placeholder=""
                   options={[
                     { value: 'supervisor', label: 'مشرف المسجد' },
-                    { value: 'member', label: 'عضو الموظفين' },
+                    { value: 'member', label: 'موظف' },
                   ]} />
               </Field>
             ) : (
-              <Field label="الصلاحية"><input className="field bg-navy-50" value="عضو الموظفين" disabled /></Field>
+              <Field label="الصلاحية"><input className="field bg-navy-50" value="موظف" disabled /></Field>
             )}
             <Field label="الراتب الشهري (ر.س)" hint="أساس احتساب الخصومات — اتركه صفرًا للمتطوعين">
               <input type="number" inputMode="numeric" className="field" value={f.salary ?? 0}

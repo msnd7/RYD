@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useDb, uid } from '../store/db'
 import { useAuth } from '../store/auth'
 import { Card, Modal, Field, Select, Badge, Empty, useToast, Menu } from '../components/ui'
@@ -35,7 +35,12 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
   const { user, isDirector } = useAuth()
   const toast = useToast()
 
-  const [filter, setFilter] = useState<'all' | TaskStatus | 'late'>('all')
+  // يصل المستخدم من بطاقات لوحة اللجنة برابط مثل /my/tasks?f=stuck
+  const [params] = useSearchParams()
+  const initial = params.get('f')
+  const [filter, setFilter] = useState<'all' | TaskStatus | 'late'>(
+    (['pending', 'done', 'stuck', 'postponed', 'late'] as const).includes(initial as any)
+      ? (initial as any) : 'all')
   const [fCommittee, setFCommittee] = useState('')
   const [fPerson, setFPerson] = useState('')
   const [fMosque, setFMosque] = useState('')
@@ -45,7 +50,7 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
 
   const today = todayISO()
 
-  /** نطاق البنود المرئية لهذا المستخدم */
+  /** نطاق المهام المرئية لهذا المستخدم */
   const base = useMemo(() => {
     if (scope === 'mine') {
       return db.tasks.filter((t) => t.assigneeId === user!.id || user!.committeeIds.includes(t.committeeId))
@@ -79,7 +84,7 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
   }
 
   const remove = (id: string) => {
-    if (!confirm('حذف هذا البند نهائيًا؟')) return
+    if (!confirm('حذف هذه المهمة نهائيًا؟')) return
     set((d) => { d.tasks = d.tasks.filter((t) => t.id !== id) })
     toast('تم الحذف')
   }
@@ -103,7 +108,7 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
         title="قائمة المهام"
         description={scope === 'mine'
           ? 'مهامك وقرارات لجنتك. غيّر الحالة بضغطة، وأضف مهامك الخاصة، وذكّر زميلك عبر واتساب.'
-          : 'أضف مهمة وحدّد المسؤول والموعد. تظهر حالة كل بند بلونه، ويمكن تذكير المسؤول عبر واتساب بضغطة.'}
+          : 'أضف مهمة وحدّد المسؤول والموعد. تظهر حالة كل مهمة بلونها، ويمكن تذكير المسؤول عبر واتساب بضغطة.'}
         actions={<button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ مهمة جديدة</button>}
       />
 
@@ -121,7 +126,7 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
 
       <Card pad={false}>
         <div className="px-4 sm:px-5 py-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 no-print">
-          <input className="field" placeholder="بحث في البنود…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="field" placeholder="بحث في المهام…" value={q} onChange={(e) => setQ(e.target.value)} />
           {scope === 'complex' && (
             <Select value={fMosque} onChange={setFMosque} placeholder="كل المساجد"
               options={db.mosques.map((m) => ({ value: m.id, label: m.name }))} />
@@ -132,7 +137,7 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
                 options={(scope === 'complex' ? db.committees : committeesOf(db, mid)).map((c) => ({
                   value: c.id, label: scope === 'complex' ? `${c.name} — ${mosqueName(db, c.mosqueId)}` : c.name,
                 }))} />
-              <Select value={fPerson} onChange={setFPerson} placeholder="كل المسؤولين"
+              <Select value={fPerson} onChange={setFPerson} placeholder="كل الموظفين"
                 options={(scope === 'complex' ? db.people.filter((p) => p.active) : staffOf(db, mid))
                   .map((p) => ({ value: p.id, label: p.name }))} />
             </>
@@ -141,7 +146,7 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
 
         {list.length === 0 ? (
           <Empty icon="🗒️"
-            title={tc.total ? 'لا توجد بنود في هذا التصنيف' : 'لا توجد مهام بعد'}
+            title={tc.total ? 'لا توجد مهام في هذا التصنيف' : 'لا توجد مهام بعد'}
             hint={scope === 'mine'
               ? 'أضف مهمة لنفسك، أو انتظر ما يُسند إليك من مدير المجمع أو مشرف مسجدك.'
               : 'أضف مهمة أو قرارًا أو توصية، وحدّد المسؤول والموعد.'}
@@ -167,7 +172,7 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
                       <button
                         onClick={() => canEdit(t) && setStatus(t.id, t.status === 'done' ? 'pending' : 'done')}
                         disabled={!canEdit(t)} title={t.status === 'done' ? 'إرجاعها قيد التنفيذ' : 'تعليمها منجزة'}
-                        className={`mt-0.5 w-6 h-6 shrink-0 rounded-lg border-2 grid place-items-center transition
+                        className={`tap mt-0.5 w-6 h-6 shrink-0 rounded-lg border-2 grid place-items-center transition
                           ${t.status === 'done'
                             ? 'bg-navy-600 border-navy-600 text-white'
                             : 'border-ink-300 text-transparent hover:border-navy-500'}`}>
@@ -195,7 +200,7 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
                             {personName(db, t.assigneeId)}
                             {t.status !== 'done' && wa && (
                               <a href={wa} target="_blank" rel="noreferrer" title={`تذكير ${assignee?.name} عبر واتساب`}
-                                className="inline-grid place-items-center w-6 h-6 rounded-md bg-navy-50 text-navy-800 hover:bg-navy-100 transition no-print">
+                                className="tap inline-grid place-items-center w-6 h-6 rounded-md bg-navy-50 text-navy-800 hover:bg-navy-100 transition no-print">
                                 <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="currentColor">
                                   <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5v-.4l-.8-1.8c-.2-.4-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.3.9 2.5 1.1 2.7a10 10 0 0 0 3.8 3.4c1.4.5 2 .6 2.6.5.5-.1 1.4-.6 1.6-1.2.2-.6.2-1 .1-1.2z" />
                                 </svg>
@@ -213,16 +218,16 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
 
                       <div className="flex items-center gap-1.5 shrink-0 no-print">
                         <select value={t.status} onChange={(e) => setStatus(t.id, e.target.value as TaskStatus)}
-                          disabled={!canEdit(t)} aria-label="حالة البند"
+                          disabled={!canEdit(t)} aria-label="حالة المهمة"
                           className={`h-9 rounded-lg px-2.5 text-[12px] font-bold border-0 outline-none cursor-pointer ${st.pill}`}>
                           {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                         </select>
                         {canEdit(t) && (
                           <Menu items={[
-                            { label: 'تعديل البند', icon: '✎', onClick: () => { setEditing(t); setOpen(true) } },
+                            { label: 'تعديل المهمة', icon: '✎', onClick: () => { setEditing(t); setOpen(true) } },
                             ...(wa ? [{ label: 'تذكير عبر واتساب', icon: '💬', onClick: () => window.open(wa, '_blank') }] : []),
                             ...(isDirector || t.createdBy === user?.id
-                              ? ['sep' as const, { label: 'حذف البند', icon: '🗑', danger: true, onClick: () => remove(t.id) }]
+                              ? ['sep' as const, { label: 'حذف المهمة', icon: '🗑', danger: true, onClick: () => remove(t.id) }]
                               : []),
                           ]} />
                         )}
@@ -245,7 +250,7 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
   )
 }
 
-/* ================= نموذج البند ================= */
+/* ================= نموذج المهمة ================= */
 function TaskModal({ open, onClose, task, mosqueId, scope }: {
   open: boolean; onClose: () => void; task: Task | null; mosqueId: string; scope: Scope
 }) {
@@ -287,7 +292,7 @@ function TaskModal({ open, onClose, task, mosqueId, scope }: {
 
   const save = () => {
     if (!f.title?.trim()) return toast('اكتب عنوان المهمة.', 'bad')
-    if (canAssignOthers && !f.assigneeId) return toast('اختر الشخص المسؤول عن المهمة.', 'bad')
+    if (canAssignOthers && !f.assigneeId) return toast('اختر الموظف المسؤول عن المهمة.', 'bad')
     const committeeId = f.committeeId || user!.committeeIds[0] || committees[0]?.id
     const assigneeId = f.assigneeId || user!.id
     if (!committeeId) return toast('اختر اللجنة.', 'bad')
@@ -314,7 +319,7 @@ function TaskModal({ open, onClose, task, mosqueId, scope }: {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={task ? 'تعديل بند' : 'مهمة جديدة'} wide
+    <Modal open={open} onClose={onClose} title={task ? 'تعديل مهمة' : 'مهمة جديدة'} wide
       footer={<>
         <button className="btn-primary" onClick={save}>{task ? 'حفظ' : 'إضافة'}</button>
         <button className="btn-ghost" onClick={onClose}>إلغاء</button>
@@ -348,13 +353,13 @@ function TaskModal({ open, onClose, task, mosqueId, scope }: {
                 <Select value={f.committeeId ?? ''} onChange={pickCommittee} placeholder="اختر اللجنة…"
                   options={committees.map((c) => ({ value: c.id, label: c.name }))} />
               </Field>
-              <Field label="المسؤول" required hint="اختيار المسؤول يملأ لجنته تلقائيًا">
-                <Select value={f.assigneeId ?? ''} onChange={pickAssignee} placeholder="اختر المسؤول…"
+              <Field label="الموظف المسؤول" required hint="اختيار الموظف يملأ لجنته تلقائيًا">
+                <Select value={f.assigneeId ?? ''} onChange={pickAssignee} placeholder="اختر الموظف المسؤول…"
                   options={pool.map((p) => ({ value: p.id, label: `${p.name} — ${p.jobTitle}` }))} />
               </Field>
             </>
           ) : (
-            <Field label="المسؤول" hint="المهام التي تضيفها تُسند إليك">
+            <Field label="الموظف المسؤول" hint="المهام التي تضيفها تُسند إليك">
               <input className="field bg-navy-50" value={user!.name} disabled />
             </Field>
           )}

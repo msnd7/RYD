@@ -51,7 +51,7 @@ export default function Dashboard() {
       <PageHeader
         eyebrow={mosque?.name}
         title="لوحة المعلومات"
-        description="ملخّص يومي لحضور فريق المسجد ومعلميه وحالة المهام واللجان — والمالية لها صفحتها المستقلة."
+        description="ملخّص يومي لحضور موظفي المسجد ومعلميه وحالة المهام واللجان — والمالية لها صفحتها المستقلة."
       />
 
       <StatStrip items={[
@@ -87,7 +87,7 @@ export default function Dashboard() {
           </div></>)}
         </Card>
 
-        <Card title="حالة البنود">
+        <Card title="حالة المهام">
           <div className="flex flex-col items-center">
             <Donut value={tc.total ? Math.round((tc.done / tc.total) * 100) : 0}
               tone={C.olive} sub={`${tc.done} من ${tc.total}`} />
@@ -112,7 +112,7 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-5">
         <Card title="أقرب المواعيد" subtitle="مهام وقرارات وتوصيات" pad={false}
           action={<Link to="../tasks" className="btn-ghost btn-sm">الكل</Link>}>
-          {upcoming.length === 0 ? <Empty icon="✅" title="لا توجد بنود مفتوحة" /> : (
+          {upcoming.length === 0 ? <Empty icon="✅" title="لا توجد مهام مفتوحة" /> : (
             <ul className="divide-y divide-line">
               {upcoming.map((t) => {
                 const d = dueLabel(t.dueDate)

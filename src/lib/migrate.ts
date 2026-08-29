@@ -67,7 +67,7 @@ export function migrate(doc: any): boolean {
   // اللجان
   doc.committees.forEach((c: any) => fill(c, 'goal', ''))
 
-  // البنود
+  // المهام
   doc.tasks.forEach((t: any) => {
     fill(t, 'details', '')
     fill(t, 'kind', 'task')

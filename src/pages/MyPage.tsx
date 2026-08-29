@@ -26,6 +26,8 @@ export default function MyPage() {
   const anns = visibleAnnouncements(db, user).slice(0, 5)
   const open = tasks.filter((t) => t.status !== 'done').sort((a, b) => a.dueDate.localeCompare(b.dueDate))
   const mine = db.attendance.find((a) => a.personId === user.id && a.date === today)
+  // مدير المجمع لا يحضّر نفسه ولا يُحسب له راتب هنا — فلا عمود جانبي في صفحته
+  const showSide = user.role !== 'director' || user.salary > 0
 
   return (
     <div className="min-h-screen">
@@ -46,21 +48,23 @@ export default function MyPage() {
             </div>
           </div>
           <div className="sm:mr-auto flex items-center gap-4">
-            <div className="text-center bg-surface/10 rounded-2xl px-5 py-3">
-              <div className="text-2xl font-display font-black">{st.rate}%</div>
-              <div className="text-[10px] font-bold text-white/70">حضور ٣٠ يومًا</div>
-            </div>
+            {user.role !== 'director' && (
+              <div className="text-center bg-surface/10 rounded-2xl px-5 py-3">
+                <div className="text-2xl font-display font-black">{st.rate}%</div>
+                <div className="text-[10px] font-bold text-white/70">حضور ٣٠ يومًا</div>
+              </div>
+            )}
             <div className="text-center bg-surface/10 rounded-2xl px-5 py-3">
               <div className="text-2xl font-display font-black">{tc.total - tc.done}</div>
-              <div className="text-[10px] font-bold text-white/70">بنود مفتوحة</div>
+              <div className="text-[10px] font-bold text-white/70">مهام مفتوحة</div>
             </div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-5">
-          <Card title="بنودي المفتوحة" pad={false} className="lg:col-span-2"
+        <div className={`grid gap-5 ${showSide ? 'lg:grid-cols-3' : ''}`}>
+          <Card title="مهامي المفتوحة" pad={false} className={showSide ? 'lg:col-span-2' : ''}
             action={user.mosqueId !== 'complex' && <Link to={`/m/${user.mosqueId}/tasks`} className="btn-ghost btn-sm">كل المهام</Link>}>
-            {open.length === 0 ? <Empty icon="✅" title="لا توجد بنود مفتوحة" hint="أحسنت، كل ما لديك منجز." /> : (
+            {open.length === 0 ? <Empty icon="✅" title="لا توجد مهام مفتوحة" hint="أحسنت، كل ما لديك منجز." /> : (
               <ul className="divide-y divide-line">
                 {open.map((t) => {
                   const d = dueLabel(t.dueDate)
@@ -85,8 +89,8 @@ export default function MyPage() {
             )}
           </Card>
 
-          <div className="space-y-5">
-            <Card title="حضوري">
+          {showSide && <div className="space-y-5">
+            {user.role !== 'director' && <Card title="حضوري">
               <div className="flex justify-center">
                 <Donut value={st.rate} tone={st.rate >= 85 ? C.olive : st.rate >= 70 ? C.gold : C.rose} sub="آخر ٣٠ يومًا" />
               </div>
@@ -100,7 +104,7 @@ export default function MyPage() {
                   {mine?.status === 'present' ? '✅ تم تحضيرك اليوم' : '📍 تحضير نفسي الآن'}
                 </Link>
               )}
-            </Card>
+            </Card>}
 
             {user.salary > 0 && (
               <Card title="راتبي هذا الشهر">
@@ -112,7 +116,7 @@ export default function MyPage() {
                 </ul>
               </Card>
             )}
-          </div>
+          </div>}
         </div>
 
         <Card title="آخر الرسائل والإعلانات" pad={false}>

@@ -96,7 +96,7 @@ export function ActionInbox({ mosqueId }: { mosqueId?: string }) {
   return (
     <Card
       title="ما يحتاج قرارك اليوم"
-      subtitle={items.length ? `${items.length} بندًا في انتظارك` : undefined}
+      subtitle={items.length ? `${items.length} مهمة في انتظارك` : undefined}
       pad={false}
     >
       {items.length === 0 ? (

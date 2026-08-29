@@ -47,7 +47,7 @@ export function LoginNotice() {
             <div>
               <div className="font-extrabold text-[15px]">تنبيه المواعيد القريبة</div>
               <div className="text-[11px] text-white/70">
-                {late > 0 ? `${late} متأخرة · ` : ''}{items.length} بند يحتاج متابعتك
+                {late > 0 ? `${late} متأخرة · ` : ''}{items.length} مهمة تحتاج متابعتك
               </div>
             </div>
           </div>

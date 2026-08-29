@@ -49,6 +49,8 @@
 @layer base {
   /* ================= النظام النهاري ================= */
   :root {
+    /* ارتفاع الشريط العلوي — يعتمد عليه العمود الجانبي اللاصق */
+    --hdr: calc(56px + var(--safe-t, 0px));
     --canvas: 245 248 252;
     --surface: 255 255 255;
     --line: 227 234 242;
@@ -107,19 +109,35 @@
 }
 
 @layer base {
+  /*
+    التمرير العمودي مسؤولية النافذة وحدها.
+    لا نضع overflow ولا max-width على html أو body: وضعهما معًا يجعل
+    الصفحة حاويتَي تمرير متداخلتين، فيتوقّف النزول بالفأرة على بعض
+    الأجهزة (خاصة الحواسيب ذات أشرطة التمرير الكلاسيكية).
+  */
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
-    overflow-x: hidden;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-canvas text-ink-900 font-sans antialiased;
-    overscroll-behavior-y: none;
-    overflow-x: hidden;
-    max-width: 100vw;
+    min-height: 100dvh;
+    /* contain يمنع سحب الصفحة الخلفية دون أن يعطّل التمرير نفسه */
+    overscroll-behavior-y: contain;
   }
+  /* منع التمدّد الأفقي من داخل المحتوى فقط — clip لا ينشئ حاوية تمرير */
+  main { overflow-x: clip; }
+  @media (min-width: 640px) { :root { --hdr: calc(58px + var(--safe-t, 0px)); } }
+  /* خريطة تحديد النطاق تبقى داخل ترتيب الصفحة ولا تعلو النوافذ */
+  .leaflet-container { z-index: 0; font: inherit; }
   /* عناصر الشبكة والمرن لا تتمدد بسبب محتواها */
   main :where(.grid, .flex) > * { min-width: 0; }
+  /* الترويسة اللاصقة لا تحجب الهدف عند القفز إلى مرساة */
+  :target { scroll-margin-top: 84px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
   /* منع تكبير الحقول تلقائيًا في iOS */
   @supports (-webkit-touch-callout: none) {
     input, select, textarea { font-size: 16px !important; }
@@ -178,6 +196,13 @@
   .muted { @apply text-[12.5px] text-ink-500 leading-6; }
   .eyebrow { @apply text-[10.5px] font-bold text-ink-400 tracking-[.06em]; }
   .num { @apply tabular-nums font-sans font-bold; }
+  /* عنصر صغير بصريًا لكن مساحة لمسه ٤٤ بكسل — لأصابع الجوال */
+  .tap { position: relative; }
+  .tap::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    width: 44px; height: 44px; transform: translate(-50%, -50%);
+  }
+  @media (pointer: fine) { .tap::after { display: none; } }
 
   /* شريط إحصاءات هادئ: خانة واحدة فقط تحمل اللون البرتقالي */
   .stat-cell { @apply px-4 py-3.5 min-w-0; }
