@@ -9,6 +9,8 @@ import {
   IconChart, IconMega, IconWallet, IconGear, IconOut, IconHome, IconBack, IconBell,
 } from './icons'
 import { dueSoonTasks } from '../lib/selectors'
+import { ThemeToggle } from '../store/theme'
+import { InstallAppModal } from './InstallApp'
 
 type Item = {
   to: string; label: string; short?: string
@@ -37,7 +39,7 @@ function Shell({ groups, title, subtitle, back, brand }: {
 
       <div className="flex">
         <aside
-          className={`no-print fixed lg:sticky top-0 z-50 h-[100dvh] w-[262px] shrink-0 bg-white border-l border-line
+          className={`no-print fixed lg:sticky top-0 z-50 h-[100dvh] w-[262px] shrink-0 bg-surface border-l border-line
             flex flex-col transition-transform duration-300 will-change-transform
             ${open ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}
         >
@@ -82,7 +84,7 @@ function Shell({ groups, title, subtitle, back, brand }: {
       </div>
 
       {bottom.length > 0 && (
-        <nav className="no-print lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-lg border-t border-line"
+        <nav className="no-print lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-lg border-t border-line"
           style={{ paddingBottom: 'var(--safe-b)' }}>
           <ul className="grid grid-cols-5">
             {bottom.map((it) => (
@@ -120,10 +122,11 @@ export function TopBar({ onMenu, title, subtitle, back }: {
   const { db, mode, sync, refresh } = useDb()
   const nav = useNavigate()
   const [menu, setMenu] = useState(false)
+  const [install, setInstall] = useState(false)
   const alerts = user ? dueSoonTasks(db, user).length : 0
 
   return (
-    <header className="no-print sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-line"
+    <header className="no-print sticky top-0 z-40 bg-surface/90 backdrop-blur-xl border-b border-line"
       style={{ paddingTop: 'var(--safe-t)' }}>
       <div className="flex items-center gap-2 px-3 sm:px-5 h-14 sm:h-[58px]">
         {onMenu && (
@@ -144,6 +147,8 @@ export function TopBar({ onMenu, title, subtitle, back }: {
         </div>
 
         <SyncBadge mode={mode} sync={sync} onRefresh={() => { void refresh() }} />
+
+        <ThemeToggle />
 
         <button onClick={() => nav('/me')} className="relative btn-icon" title="تنبيهاتي">
           <IconBell />
@@ -176,8 +181,13 @@ export function TopBar({ onMenu, title, subtitle, back }: {
                 <button className="menu-item" onClick={() => { setMenu(false); nav('/me') }}>
                   <IconUsers className="w-4 h-4" /> صفحتي وتقريري
                 </button>
-                <button className="menu-item" onClick={() => { setMenu(false); nav('/') }}>
-                  <IconHome className="w-4 h-4" /> واجهة المجمع
+                {user?.role === 'director' && (
+                  <button className="menu-item" onClick={() => { setMenu(false); nav('/') }}>
+                    <IconHome className="w-4 h-4" /> واجهة المجمع
+                  </button>
+                )}
+                <button className="menu-item" onClick={() => { setMenu(false); setInstall(true) }}>
+                  <span className="w-4 text-center">⬇</span> تثبيت التطبيق
                 </button>
                 <button className="menu-item" onClick={() => { setMenu(false); nav('/change-password') }}>
                   <IconGear className="w-4 h-4" /> تغيير رمز الدخول
@@ -191,6 +201,7 @@ export function TopBar({ onMenu, title, subtitle, back }: {
           )}
         </div>
       </div>
+      <InstallAppModal open={install} onClose={() => setInstall(false)} />
     </header>
   )
 }
@@ -242,14 +253,14 @@ export function MosqueLayout() {
       title: 'المتابعة اليومية',
       items: [
         { to: '', label: 'لوحة المعلومات', short: 'اللوحة', Icon: IconGrid, primary: true },
-        { to: 'attendance', label: 'الحضور والتحضير', short: 'الحضور', Icon: IconPin, badge: pendingLeaves, primary: true },
-        { to: 'tasks', label: 'المهام والقرارات', short: 'المهام', Icon: IconCheck, badge: myTasks, primary: true },
+        { to: 'attendance', label: 'التحضير', short: 'الحضور', Icon: IconPin, badge: pendingLeaves, primary: true },
+        { to: 'tasks', label: 'قائمة المهام', short: 'المهام', Icon: IconCheck, badge: myTasks, primary: true },
       ],
     },
     {
       title: 'المسجد وفريقه',
       items: [
-        { to: 'staff', label: 'الإداريون', short: 'الإداريون', Icon: IconUsers, primary: true },
+        { to: 'staff', label: 'الموظفون', short: 'الموظفون', Icon: IconUsers, primary: true },
         { to: 'teachers', label: 'المعلمون', short: 'المعلمون', Icon: IconBook, primary: true },
         { to: 'committees', label: 'اللجان', Icon: IconLayers },
       ],
@@ -273,23 +284,84 @@ export function MosqueLayout() {
 
   const brand = (
     <div className="space-y-2.5">
-      <Link to="/" className="flex items-center gap-2 text-[11px] font-bold text-ink-400 hover:text-orange-600 transition">
-        <IconBack className="w-3.5 h-3.5" /> كل المساجد
-      </Link>
+      {isDirector && (
+        <Link to="/" className="flex items-center gap-2 text-[11px] font-bold text-ink-400 hover:text-orange-600 transition">
+          <IconBack className="w-3.5 h-3.5" /> كل المساجد
+        </Link>
+      )}
       <div className="flex items-center gap-2.5">
         <LogoMark h={34} />
-        <select
-          value={mid} onChange={(e) => nav(`/m/${e.target.value}`)}
-          className="field !h-9 !px-2.5 !pl-7 text-[12.5px] font-bold !border-navy-200 !bg-navy-50 !text-navy-800"
-          aria-label="اختيار المسجد"
-        >
-          {db.mosques.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-        </select>
+        {isDirector ? (
+          <select
+            value={mid} onChange={(e) => nav(`/m/${e.target.value}`)}
+            className="field !h-9 !px-2.5 !pl-7 text-[12.5px] font-bold !border-navy-200 !bg-navy-50 !text-navy-800"
+            aria-label="اختيار المسجد"
+          >
+            {db.mosques.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+        ) : (
+          <span className="min-w-0 leading-tight border-r border-line pr-2.5">
+            <span className="block font-display font-bold text-[13px] text-navy-800 truncate">{mosque.shortName}</span>
+            <span className="block text-[10px] font-bold text-ink-400 truncate">مسجدي</span>
+          </span>
+        )}
       </div>
     </div>
   )
 
-  return <Shell groups={groups} title={mosque.name} subtitle={mosque.address} back="/" brand={brand} />
+  return <Shell groups={groups} title={mosque.name} subtitle={mosque.address}
+    back={isDirector ? '/' : undefined} brand={brand} />
+}
+
+/* ===================== مساحة الموظف (عضو اللجنة) ===================== */
+export function MemberLayout() {
+  const { user } = useAuth()
+  const { db } = useDb()
+  if (!user) return null
+
+  const myOpen = db.tasks.filter(
+    (t) => t.status !== 'done' && (t.assigneeId === user.id || user.committeeIds.includes(t.committeeId)),
+  ).length
+  const myCustodies = db.custodies.filter(
+    (c) => c.committeeId && user.committeeIds.includes(c.committeeId) && c.status !== 'closed' && c.status !== 'rejected',
+  ).length
+
+  const groups: Group[] = [
+    {
+      title: 'عملي اليومي',
+      items: [
+        { to: '/my', label: 'قائمة المهام', short: 'المهام', Icon: IconCheck, badge: myOpen, primary: true },
+        { to: '/my/attendance', label: 'التحضير', short: 'التحضير', Icon: IconPin, primary: true },
+        { to: '/my/committee', label: 'لجنتي', short: 'لجنتي', Icon: IconLayers, badge: myCustodies, primary: true },
+      ],
+    },
+    {
+      title: 'ما يخصّني',
+      items: [
+        { to: '/my/announcements', label: 'الإعلانات', short: 'الإعلانات', Icon: IconMega, primary: true },
+        { to: '/my/report', label: 'تقريري وملفي', short: 'تقريري', Icon: IconChart, primary: true },
+      ],
+    },
+  ]
+
+  const brand = (
+    <div className="flex items-center gap-2.5">
+      <LogoMark h={34} />
+      <span className="min-w-0 leading-tight border-r border-line pr-2.5">
+        <span className="block font-display font-bold text-[13.5px] text-navy-800 truncate">رياض القرآن</span>
+        <span className="block text-[10px] font-bold text-ink-400 truncate">مساحتي</span>
+      </span>
+    </div>
+  )
+
+  return (
+    <Shell
+      groups={groups}
+      title={user.name}
+      subtitle={`${user.jobTitle} · ${db.mosques.find((m) => m.id === user.mosqueId)?.name ?? ''}`}
+      brand={brand}
+    />
+  )
 }
 
 /* ===================== واجهة المجمع ===================== */
@@ -315,7 +387,7 @@ export function ComplexLayout() {
       items: [
         { to: '/complex/attendance', label: 'الحضور العام', short: 'الحضور', Icon: IconPin, badge: pendingAll, primary: true },
         { to: '/complex/tasks', label: 'كل المهام', short: 'المهام', Icon: IconCheck, primary: true },
-        { to: '/complex/staff', label: 'الإداريون', short: 'الإداريون', Icon: IconUsers, primary: true },
+        { to: '/complex/staff', label: 'الموظفون', short: 'الموظفون', Icon: IconUsers, primary: true },
       ],
     },
     {

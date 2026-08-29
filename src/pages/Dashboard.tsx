@@ -167,7 +167,7 @@ export default function Dashboard() {
                 ] as const).map(([label, key]) => {
                   const n = teacherToday.filter((t) => t.status === key).length
                   return (
-                    <div key={key} className={`px-3 py-2.5 ${key === 'absent' && n > 0 ? 'bg-orange-50' : 'bg-white'}`}>
+                    <div key={key} className={`px-3 py-2.5 ${key === 'absent' && n > 0 ? 'bg-orange-50' : 'bg-surface'}`}>
                       <p className="text-[11px] font-bold text-ink-500">{label}</p>
                       <p className={`num text-[18px] mt-1 ${key === 'absent' && n > 0 ? 'text-orange-700' : 'text-navy-800'}`}>{n}</p>
                     </div>

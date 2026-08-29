@@ -116,7 +116,7 @@ export default function Committees() {
                   <p className="text-[11px] font-bold text-ink-400 mb-2">الأعضاء ({members.length})</p>
                   <div className="flex flex-wrap gap-1.5">
                     {members.length === 0 && (
-                      <span className="text-[11.5px] text-ink-300">لم يُسكَّن أحد بعد — من صفحة الإداريين</span>
+                      <span className="text-[11.5px] text-ink-300">لم يُسكَّن أحد بعد — من صفحة الموظفين</span>
                     )}
                     {members.map((m) => (
                       <span key={m.id} className={`chip ${m.id === c.leaderId ? 'bg-navy-700 text-white' : 'bg-navy-50 text-ink-700'}`}>
@@ -143,7 +143,7 @@ export default function Committees() {
                       const b = custodyBalance(x)
                       const overdue = x.status === 'approved' && x.closeDate < todayISO()
                       return (
-                        <li key={x.id} className="rounded-lg bg-white border border-line px-3 py-2.5">
+                        <li key={x.id} className="rounded-lg bg-surface border border-line px-3 py-2.5">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-bold text-[12.5px] flex-1 min-w-0 truncate">{x.purpose}</span>
                             <Badge tone={CST[x.status].tone}>{CST[x.status].label}</Badge>
@@ -263,7 +263,7 @@ function QuickTaskModal({ committee, onClose }: { committee: Committee | null; o
   const save = () => {
     if (!title.trim()) return toast('اكتب عنوان البند.', 'bad')
     const aid = assigneeId || committee.leaderId || pool[0]?.id
-    if (!aid) return toast('لا يوجد أعضاء لتفويضهم. أضف إداريين للمسجد أولًا.', 'bad')
+    if (!aid) return toast('لا يوجد أعضاء لتفويضهم. أضف موظفين للمسجد أولًا.', 'bad')
     set((d) => d.tasks.push({
       id: uid('t'), mosqueId: committee.mosqueId, committeeId: committee.id, assigneeId: aid,
       title: title.trim(), details: '', kind, status: 'pending', dueDate,

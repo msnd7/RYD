@@ -12,7 +12,7 @@ import { money } from '../lib/format'
 import type { Person, Role } from '../types'
 
 const ROLE_LABEL: Record<Role, string> = {
-  director: 'مدير المجمع', supervisor: 'مشرف المسجد', member: 'عضو فريق العمل',
+  director: 'مدير المجمع', supervisor: 'مشرف المسجد', member: 'عضو الموظفين',
 }
 
 export default function Staff({ scope }: { scope?: 'complex' }) {
@@ -57,10 +57,10 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
     <div className="space-y-5">
       <PageHeader
         eyebrow={isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
-        title="الإداريون"
+        title="الموظفون"
         description={isComplex
-          ? 'أضف مشرف كل مسجد ببريده الإلكتروني، ثم يتولّى كل مشرف إضافة إداريي مسجده. لكل إداري حساب يدخل به ويحضّر نفسه.'
-          : 'أضف إداريي المسجد وسكّنهم في اللجان. لكل إداري حساب يدخل به ويحضّر نفسه داخل نطاق المسجد.'}
+          ? 'أضف مشرف كل مسجد ببريده الإلكتروني، ثم يتولّى كل مشرف إضافة موظفي مسجده. لكل موظف حساب يدخل به ويحضّر نفسه.'
+          : 'أضف موظفي المسجد وسكّنهم في اللجان. لكل موظف حساب يدخل به ويحضّر نفسه داخل نطاق المسجد.'}
         actions={
           <>
             {isComplex && (
@@ -69,7 +69,7 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
             )}
             {canAdd && (
               <button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>
-                ＋ {isComplex ? 'إضافة مشرف أو إداري' : 'إضافة إداري'}
+                ＋ {isComplex ? 'إضافة مشرف أو موظف' : 'إضافة موظف'}
               </button>
             )}
           </>
@@ -77,7 +77,7 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
       />
 
       <StatStrip items={[
-        { label: 'عدد الإداريين', value: list.length },
+        { label: 'عدد الموظفين', value: list.length },
         { label: 'مشرفو المساجد', value: list.filter((p) => p.role === 'supervisor').length },
         { label: 'عقود موقّعة', value: list.filter((p) => p.contract?.signedAt).length, hint: `من ${list.length}` },
         { label: 'لم يغيّروا الرمز', value: list.filter((p) => p.mustChangePassword).length,
@@ -97,7 +97,7 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
             title={isComplex ? 'لم يُضف أي مشرف بعد' : 'لا يوجد أعضاء في هذا المسجد'}
             hint={isComplex
               ? 'ابدأ بإضافة مشرف لكل مسجد ببريده الإلكتروني، وسيُسلَّم رمزًا مبدئيًا يغيّره عند أول دخول.'
-              : 'أضف أعضاء فريق العمل ببياناتهم وبريدهم الإلكتروني.'}
+              : 'أضف أعضاء الموظفين ببياناتهم وبريدهم الإلكتروني.'}
             action={canAdd && <button className="btn-primary btn-sm" onClick={() => setOpen(true)}>＋ إضافة</button>}
           />
         ) : (
@@ -107,7 +107,7 @@ export default function Staff({ scope }: { scope?: 'complex' }) {
               <table className="w-full">
                 <thead className="bg-navy-50">
                   <tr>
-                    <th className="th">العامل</th>
+                    <th className="th">الموظف</th>
                     {isComplex && <th className="th">المسجد</th>}
                     <th className="th">الصلاحية</th>
                     <th className="th">اللجان</th>
@@ -266,7 +266,7 @@ function CredentialsModal({ data, onClose }: {
   )
 }
 
-/* ================= نموذج العامل ================= */
+/* ================= نموذج الموظف ================= */
 function PersonModal({ open, onClose, person, mosqueId, allowMosquePick, allowRolePick, onCreated }: {
   open: boolean; onClose: () => void; person: Person | null
   mosqueId: string; allowMosquePick?: boolean; allowRolePick?: boolean
@@ -283,7 +283,7 @@ function PersonModal({ open, onClose, person, mosqueId, allowMosquePick, allowRo
     setKey(sig)
     setF(person ? { ...person } : {
       mosqueId: mosqueId || db.mosques[0].id,
-      name: '', jobTitle: allowRolePick && allowMosquePick ? 'مشرف المسجد' : 'عضو فريق العمل',
+      name: '', jobTitle: allowRolePick && allowMosquePick ? 'مشرف المسجد' : 'عضو الموظفين',
       phone: '', email: '',
       role: allowRolePick && allowMosquePick ? 'supervisor' : 'member',
       committeeIds: [], salary: 0,
@@ -302,7 +302,7 @@ function PersonModal({ open, onClose, person, mosqueId, allowMosquePick, allowRo
   }))
 
   const save = () => {
-    if (!f.name?.trim()) return toast('اكتب اسم العامل.', 'bad')
+    if (!f.name?.trim()) return toast('اكتب اسم الموظف.', 'bad')
     const email = normEmail(f.email ?? '')
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return toast('اكتب بريدًا إلكترونيًا صحيحًا.', 'bad')
     if (db.people.some((p) => normEmail(p.email) === email && p.id !== person?.id)) {
@@ -343,7 +343,7 @@ function PersonModal({ open, onClose, person, mosqueId, allowMosquePick, allowRo
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={person ? 'تعديل بيانات' : 'إضافة عامل جديد'} wide
+    <Modal open={open} onClose={onClose} title={person ? 'تعديل بيانات' : 'إضافة موظف جديد'} wide
       footer={<>
         <button className="btn-primary" onClick={save}>{person ? 'حفظ' : 'إضافة وإنشاء الحساب'}</button>
         <button className="btn-ghost" onClick={onClose}>إلغاء</button>
@@ -377,11 +377,11 @@ function PersonModal({ open, onClose, person, mosqueId, allowMosquePick, allowRo
                 <Select value={f.role ?? 'member'} onChange={(v) => setF({ ...f, role: v })} placeholder=""
                   options={[
                     { value: 'supervisor', label: 'مشرف المسجد' },
-                    { value: 'member', label: 'عضو فريق العمل' },
+                    { value: 'member', label: 'عضو الموظفين' },
                   ]} />
               </Field>
             ) : (
-              <Field label="الصلاحية"><input className="field bg-navy-50" value="عضو فريق العمل" disabled /></Field>
+              <Field label="الصلاحية"><input className="field bg-navy-50" value="عضو الموظفين" disabled /></Field>
             )}
             <Field label="الراتب الشهري (ر.س)" hint="أساس احتساب الخصومات — اتركه صفرًا للمتطوعين">
               <input type="number" inputMode="numeric" className="field" value={f.salary ?? 0}
@@ -521,7 +521,7 @@ function ContractModal({ person, onClose }: { person: Person | null; onClose: ()
         <PrintBar title="عقد العمل" />
         {!c?.signature && (mine || isDirector) && (
           <div className="mt-4">
-            <p className="label">{mine ? 'أقر بالاطلاع على بنود العقد وأوقّع عليه:' : 'توقيع العامل على الشاشة:'}</p>
+            <p className="label">{mine ? 'أقر بالاطلاع على بنود العقد وأوقّع عليه:' : 'توقيع الموظف على الشاشة:'}</p>
             <SignaturePad onSave={sign} />
           </div>
         )}

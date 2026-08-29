@@ -32,9 +32,10 @@ export function fmtHijri(iso?: string) {
   if (!iso) return ''
   try {
     const d = new Date(iso.length > 10 ? iso : iso + 'T12:00:00')
+    // Intl يضيف لاحقة "هـ" بنفسه، فلا تُكرَّر
     return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
       day: 'numeric', month: 'long', year: 'numeric',
-    }).format(d) + 'هـ'
+    }).format(d)
   } catch { return '' }
 }
 

@@ -35,5 +35,5 @@ export function ReportFooter({ by }: { by?: string }) {
 
 /** غلاف منطقة الطباعة — لا يُطبع من الصفحة سوى ما بداخله */
 export function PrintArea({ children }: { children: React.ReactNode }) {
-  return <div id="print-area" className="bg-white">{children}</div>
+  return <div id="print-area" className="bg-surface">{children}</div>
 }

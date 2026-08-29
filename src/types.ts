@@ -190,7 +190,7 @@ export interface Teacher {
   name: string
   phone: string
   circle: string        // الحلقة
-  level: string
+  level: string         // المرحلة الدراسية
   studentsCount: number
   salary: number        // الراتب الشهري — أساس احتساب خصومات الغياب والاستئذان
   active: boolean

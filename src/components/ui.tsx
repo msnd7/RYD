@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { UploadedFile } from '../types'
 import { useDb } from '../store/db'
 import { uploadFile } from '../lib/api'
@@ -27,27 +28,25 @@ export function Card({ title, subtitle, action, children, className = '', pad = 
 
 /* ---------------- Stat ---------------- */
 const TONES = {
-  brand: 'from-navy-700 to-navy-900 text-white',
-  olive: 'from-navy-500 to-navy-700 text-white',
-  gold:  'from-orange-400 to-orange-600 text-white',
-  rose:  'from-orange-600 to-orange-800 text-white',
-  slate: 'from-white to-white text-ink-900 border border-line',
+  brand: 'bg-navy-50 text-navy-800 border-navy-100',
+  olive: 'bg-navy-50 text-navy-800 border-navy-100',
+  gold:  'bg-orange-50 text-orange-800 border-orange-200',
+  rose:  'bg-orange-50 text-orange-800 border-orange-200',
+  slate: 'bg-surface text-ink-900 border-line',
 } as const
 
-export function Stat({ label, value, hint, tone = 'slate', icon }: {
+export function Stat({ label, value, hint, tone = 'slate' }: {
   label: string; value: React.ReactNode; hint?: string
   tone?: keyof typeof TONES; icon?: React.ReactNode
 }) {
-  const light = tone !== 'slate'
   return (
-    <div className={`rounded-2xl bg-gradient-to-bl ${TONES[tone]} p-4 shadow-soft`}>
-      <div className="flex items-center justify-between gap-2">
-        <span className={`text-[12px] font-bold ${light ? 'text-white/80' : 'text-ink-500'}`}>{label}</span>
-        {icon && <span className={light ? 'text-white/70' : 'text-ink-300'}>{icon}</span>}
+    <div className={`rounded-xl border p-3.5 ${TONES[tone]}`}>
+      <div className="text-[11.5px] font-bold opacity-70 truncate">{label}</div>
+      <div className={`num mt-1.5 leading-none
+        ${String(value).length > 11 ? 'text-[17px]' : String(value).length > 7 ? 'text-[20px]' : 'text-[24px]'}`}>
+        {value}
       </div>
-      <div className={`mt-1.5 font-extrabold font-display tabular-nums leading-tight
-        ${String(value).length > 11 ? 'text-lg' : String(value).length > 7 ? 'text-2xl' : 'text-3xl'}`}>{value}</div>
-      {hint && <div className={`mt-1 text-[11px] font-bold ${light ? 'text-white/70' : 'text-ink-500'}`}>{hint}</div>}
+      {hint && <div className="mt-1.5 text-[10.5px] font-bold opacity-60 truncate">{hint}</div>}
     </div>
   )
 }
@@ -55,11 +54,11 @@ export function Stat({ label, value, hint, tone = 'slate', icon }: {
 /* ---------------- Badge ---------------- */
 export const BADGE: Record<string, string> = {
   ok: 'bg-navy-100 text-navy-800',
-  info: 'bg-navy-50 text-navy-700',
+  info: 'bg-navy-50 text-navy-800',
   warn: 'bg-orange-100 text-orange-700',
   bad: 'bg-orange-500 text-white',
   mute: 'bg-navy-50 text-ink-500',
-  purple: 'bg-navy-800 text-white',
+  purple: 'bg-navy-700 text-white',
 }
 
 export function Badge({ tone = 'mute', children, dot }: {
@@ -90,7 +89,7 @@ export function Menu({ items, label = 'إجراءات', align = 'start' }: {
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o) }}
         aria-label={label} title={label}
         className={`inline-grid place-items-center w-9 h-9 rounded-lg border transition
-          ${open ? 'bg-navy-700 text-white border-navy-700' : 'bg-white text-ink-500 border-line hover:bg-navy-50 hover:text-navy-700'}`}
+          ${open ? 'bg-navy-700 text-white border-navy-700' : 'bg-surface text-ink-500 border-line hover:bg-navy-50 hover:text-navy-800'}`}
       >
         <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="currentColor">
           <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
@@ -133,7 +132,7 @@ export function StatStrip({ items, className = '' }: {
     <div className={`card overflow-hidden ${className}`}>
       <div className={`stat-grid grid gap-px bg-line ${COLS[Math.min(items.length, 6)] ?? COLS[4]}`}>
         {items.map((it, i) => (
-          <div key={i} className={`stat-cell ${it.accent ? 'bg-orange-50' : 'bg-white'}`}>
+          <div key={i} className={`stat-cell ${it.accent ? 'bg-orange-50' : 'bg-surface'}`}>
             <div className="stat-k">{it.label}</div>
             <div className={`stat-v ${it.accent ? 'text-orange-700' : ''}`}>{it.value}</div>
             {it.hint && <div className="stat-h">{it.hint}</div>}
@@ -158,19 +157,26 @@ export function Modal({ open, onClose, title, children, footer, wide }: {
   }, [open, onClose])
 
   if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center no-print">
-      <div className="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className={`relative w-full ${wide ? 'sm:max-w-3xl' : 'sm:max-w-lg'} max-h-[92vh] overflow-y-auto
-        bg-white rounded-t-3xl sm:rounded-3xl shadow-lift pop-in`}>
-        <header className="sticky top-0 bg-white/95 backdrop-blur px-5 py-4 border-b border-line flex items-center justify-between z-10">
-          <h3 className="text-lg font-extrabold">{title}</h3>
-          <button onClick={onClose} className="w-9 h-9 grid place-items-center rounded-xl hover:bg-line text-ink-500" aria-label="إغلاق">✕</button>
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center no-print">
+      <div className="absolute inset-0 bg-ink-900/50 backdrop-blur-[2px]" onClick={onClose} />
+      <div className={`relative w-full ${wide ? 'sm:max-w-3xl' : 'sm:max-w-lg'} max-h-[92dvh] flex flex-col
+        bg-surface rounded-t-3xl sm:rounded-3xl shadow-lift pop-in overflow-hidden`}>
+        <header className="shrink-0 bg-surface px-5 py-4 border-b border-line flex items-center justify-between">
+          <h3 className="font-display text-[16px] font-bold">{title}</h3>
+          <button onClick={onClose} className="w-9 h-9 grid place-items-center rounded-xl hover:bg-navy-50 text-ink-500" aria-label="إغلاق">✕</button>
         </header>
-        <div className="p-5">{children}</div>
-        {footer && <footer className="sticky bottom-0 bg-white/95 backdrop-blur px-5 py-4 border-t border-line flex gap-2 justify-start">{footer}</footer>}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-5">{children}</div>
+        {footer && (
+          <footer className="shrink-0 bg-surface px-5 py-4 border-t border-line flex gap-2 justify-start"
+            style={{ paddingBottom: 'max(1rem, var(--safe-b))' }}>
+            {footer}
+          </footer>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -224,7 +230,7 @@ export function Tabs({ value, onChange, items }: {
           className={`tab ${value === it.value ? 'tab-on' : ''}`}>
           {it.label}
           {it.count !== undefined && (
-            <span className={`mr-1.5 text-[10px] px-1.5 py-0.5 rounded-md ${value === it.value ? 'bg-navy-100 text-navy-700' : 'bg-white/70 text-ink-500'}`}>
+            <span className={`mr-1.5 text-[10px] px-1.5 py-0.5 rounded-md ${value === it.value ? 'bg-navy-100 text-navy-700' : 'bg-surface/70 text-ink-500'}`}>
               {it.count}
             </span>
           )}

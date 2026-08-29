@@ -21,6 +21,9 @@ const TST: Record<TeacherAttStatus, { label: string; on: string }> = {
 }
 const ORDER: TeacherAttStatus[] = ['present', 'late', 'excused', 'absent']
 
+/** المراحل الدراسية لطلاب الحلقة */
+export const STAGES = ['الابتدائية', 'المتوسطة', 'الثانوية', 'الجامعيون', 'الموظفون'] as const
+
 export default function Teachers() {
   const { mid = '' } = useParams()
   const { db, set } = useDb()
@@ -44,9 +47,17 @@ export default function Teachers() {
   const mark = (tid: string, status: TeacherAttStatus) => {
     set((d) => {
       const ex = d.teacherAttendance.find((r) => r.teacherId === tid && r.date === date)
-      if (ex) ex.status = status
+      if (ex) { ex.status = status; if (status !== 'excused') ex.note = undefined }
       else d.teacherAttendance.push({ id: uid('ta'), mosqueId: mid, teacherId: tid, date, status })
     })
+  }
+
+  /** مسح رصد اليوم — لتصحيح غياب سُجّل بالخطأ */
+  const clearMark = (tid: string) => {
+    set((d) => {
+      d.teacherAttendance = d.teacherAttendance.filter((r) => !(r.teacherId === tid && r.date === date))
+    })
+    toast('أُزيل الرصد — يمكن تسجيله من جديد')
   }
 
   const markAll = (status: TeacherAttStatus) => {
@@ -67,7 +78,7 @@ export default function Teachers() {
       <PageHeader
         eyebrow={mosque?.name}
         title="المعلمون"
-        description="يسجّل مشرف المسجد بيانات المعلمين ورواتبهم، ويرصد حضورهم يوميًا ويرفع لهم طلبات الاستئذان. المعلم لا يحتاج حسابًا في المنصة."
+        description="مشرف المسجد وحده يسجّل بيانات معلميه ورواتبهم، ويرصد حضورهم وغيابهم يوميًا، ويرفع لهم طلبات الاستئذان، ويصحّح أي رصد خاطئ. المعلم لا يحتاج حسابًا في المنصة."
         actions={canManage && (
           <button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>
             ＋ إضافة معلم
@@ -134,8 +145,11 @@ export default function Teachers() {
                           <Menu align="start" items={[
                             { label: 'طلب استئذان', icon: '📝', onClick: () => setLeaveFor(t) },
                             { label: 'تقييم المعلم', icon: '★', onClick: () => setEvalFor(t) },
-                            'sep',
                             { label: 'تعديل البيانات', icon: '✎', onClick: () => { setEditing(t); setOpen(true) } },
+                            ...(r ? ['sep' as const, {
+                              label: 'مسح رصد هذا اليوم', icon: '↩', danger: true,
+                              onClick: () => clearMark(t.id),
+                            }] : []),
                           ]} />
                         )}
                       </div>
@@ -148,6 +162,12 @@ export default function Teachers() {
                           </button>
                         ))}
                       </div>
+                      {r && canManage && (
+                        <button onClick={() => clearMark(t.id)}
+                          className="mt-2 text-[11.5px] font-bold text-ink-400 hover:text-orange-700 transition no-print">
+                          سُجّل بالخطأ؟ امسح رصد هذا اليوم
+                        </button>
+                      )}
                       {r?.note && <p className="text-[11.5px] text-orange-700 bg-orange-50 rounded-lg px-2.5 py-1.5 mt-2">📝 {r.note}</p>}
                     </li>
                   )
@@ -166,7 +186,7 @@ export default function Teachers() {
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-navy-50"><tr>
-                      <th className="th">المعلم</th><th className="th">الحلقة</th><th className="th">المستوى</th>
+                      <th className="th">المعلم</th><th className="th">الحلقة</th><th className="th">المرحلة</th>
                       <th className="th">الطلاب</th><th className="th">الجوال</th>
                       <th className="th">الراتب / الصافي</th><th className="th">التقييم</th><th className="th no-print"></th>
                     </tr></thead>
@@ -283,7 +303,7 @@ function TeachersReport({ mid }: { mid: string }) {
                 ['إجمالي الخصومات', money(totalGross - totalNet)],
                 ['الصافي المستحق', money(totalNet)],
               ].map(([k, v]) => (
-                <div key={k} className="bg-white px-4 py-3">
+                <div key={k} className="bg-surface px-4 py-3">
                   <p className="text-[11px] font-bold text-ink-500">{k}</p>
                   <p className="num text-[17px] mt-1">{v}</p>
                 </div>
@@ -326,7 +346,7 @@ function TeachersReport({ mid }: { mid: string }) {
                           ['الخصم', money(pay.deduction)],
                           ['الصافي', money(pay.net)],
                         ].map(([k, v]) => (
-                          <div key={k} className="bg-white px-3 py-2">
+                          <div key={k} className="bg-surface px-3 py-2">
                             <p className="text-[10px] font-bold text-ink-400">{k}</p>
                             <p className="num text-[13px] mt-0.5">{v}</p>
                           </div>
@@ -367,7 +387,7 @@ function TeacherModal({ open, onClose, teacher, mosqueId }: {
   if (sig !== key) {
     setKey(sig)
     setF(teacher ? { ...teacher } : {
-      name: '', phone: '', circle: '', level: 'حفظ', studentsCount: 10,
+      name: '', phone: '', circle: '', level: 'الابتدائية', studentsCount: 10,
       salary: 0, notes: '', hiredAt: todayISO(),
     })
   }
@@ -402,9 +422,9 @@ function TeacherModal({ open, onClose, teacher, mosqueId }: {
         <Field label="الحلقة">
           <input className="field" value={f.circle ?? ''} onChange={(e) => setF({ ...f, circle: e.target.value })} placeholder="الحلقة الأولى" />
         </Field>
-        <Field label="المستوى">
-          <Select value={f.level ?? ''} onChange={(v) => setF({ ...f, level: v })} placeholder="اختر…"
-            options={['حفظ', 'تلاوة وتجويد', 'مراجعة', 'تأسيس'].map((v) => ({ value: v, label: v }))} />
+        <Field label="المرحلة" required>
+          <Select value={f.level ?? ''} onChange={(v) => setF({ ...f, level: v })} placeholder="اختر المرحلة…"
+            options={STAGES.map((v) => ({ value: v, label: v }))} />
         </Field>
         <Field label="عدد الطلاب">
           <input type="number" inputMode="numeric" className="field" value={f.studentsCount ?? 0}

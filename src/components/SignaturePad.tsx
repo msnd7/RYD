@@ -57,15 +57,15 @@ export function SignaturePad({ onSave, initial }: {
 
   return (
     <div>
-      <div className="rounded-2xl border-2 border-dashed border-ink-300 bg-white overflow-hidden relative">
+      <div className="rounded-2xl border-2 border-dashed border-ink-300 overflow-hidden relative" style={{ background: '#ffffff' }}>
         <canvas ref={ref} style={{ height: 170, width: '100%', touchAction: 'none' }}
           onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up} />
         {empty && (
-          <span className="absolute inset-0 grid place-items-center pointer-events-none text-ink-300 font-bold text-sm">
+          <span className="absolute inset-0 grid place-items-center pointer-events-none font-bold text-sm" style={{ color: '#94a3b8' }}>
             ✍️ وقّع هنا بإصبعك أو بالفأرة
           </span>
         )}
-        <div className="absolute bottom-2 left-3 right-3 h-px bg-line pointer-events-none" />
+        <div className="absolute bottom-2 left-3 right-3 h-px pointer-events-none" style={{ background: '#cbd5e1' }} />
       </div>
       <div className="flex gap-2 mt-3 no-print">
         <button type="button" className="btn-primary btn-sm" disabled={empty}

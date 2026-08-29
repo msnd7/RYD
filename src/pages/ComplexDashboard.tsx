@@ -43,7 +43,7 @@ export default function ComplexDashboard() {
       />
 
       <StatStrip items={[
-        { label: 'الإداريون', value: rows.reduce((s, r) => s + r.staff.length, 0) },
+        { label: 'الموظفون', value: rows.reduce((s, r) => s + r.staff.length, 0) },
         { label: 'المعلمون', value: rows.reduce((s, r) => s + r.teachers.length, 0) },
         { label: 'بنود مفتوحة', value: allTc.total - allTc.done },
         { label: 'متأخرة', value: allTc.late },
@@ -55,8 +55,8 @@ export default function ComplexDashboard() {
           <table className="w-full">
             <thead className="bg-navy-50"><tr>
               <th className="th">المسجد</th><th className="th">المشرف</th>
-              <th className="th">الإداريون</th><th className="th">المعلمون</th>
-              <th className="th">حضور الإداريين</th><th className="th">حضور المعلمين</th>
+              <th className="th">الموظفون</th><th className="th">المعلمون</th>
+              <th className="th">حضور الموظفين</th><th className="th">حضور المعلمين</th>
               <th className="th">إنجاز المهام</th><th className="th">المصروف</th><th className="th no-print"></th>
             </tr></thead>
             <tbody>

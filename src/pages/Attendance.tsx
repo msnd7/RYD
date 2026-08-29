@@ -16,38 +16,45 @@ const ST: Record<AttStatus, { label: string; tone: string }> = {
   excused: { label: 'مستأذن', tone: 'warn' },
 }
 
-export default function Attendance({ scope }: { scope?: 'complex' }) {
+export default function Attendance({ scope }: { scope?: 'complex' | 'mine' }) {
   const { mid = '' } = useParams()
   const { db, set } = useDb()
   const { user, isDirector } = useAuth()
   const toast = useToast()
   const isComplex = scope === 'complex'
-  const mosqueId = isComplex ? (user?.mosqueId as string) : mid
+  const isMine = scope === 'mine'
+  const mosqueId = isComplex || isMine ? (user?.mosqueId as string) : mid
 
   // المشرف والعضو يبدآن من «تحضيري» لأنه إجراؤهما اليومي، والمدير من «حضور الفريق»
   const [tab, setTab] = useState<'me' | 'team' | 'leaves'>(
-    user?.role === 'director' ? 'team' : 'me')
+    !isMine && user?.role === 'director' ? 'team' : 'me')
   const [leaveOpen, setLeaveOpen] = useState(false)
   const [fMosque, setFMosque] = useState('')
 
   const today = todayISO()
-  const canManage = isDirector || user?.role === 'supervisor'
+  const canManage = !isMine && (isDirector || user?.role === 'supervisor')
 
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow={isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
-        title="الحضور والتحضير"
-        description="يحضّر كل إداري نفسه من حسابه داخل نطاق المسجد، ويعتمد المدير طلبات الاستئذان — والغياب يُخصم يومًا كاملًا والاستئذان نصف يوم."
+        eyebrow={isMine ? 'مساحتي' : isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
+        title="التحضير"
+        description={isMine
+          ? 'حضّر نفسك يوميًا من داخل نطاق المسجد، وتابع نسبة حضورك وأثرها على راتبك، وارفع طلب استئذان يعتمده مدير المجمع.'
+          : 'يحضّر كل موظف نفسه من حسابه داخل نطاق المسجد، ويعتمد المدير طلبات الاستئذان — والغياب يُخصم يومًا كاملًا والاستئذان نصف يوم.'}
       />
       <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
         { value: 'me', label: 'تحضيري' },
-        ...(canManage ? [{ value: 'team' as const, label: 'حضور الفريق' }] : []),
-        { value: 'leaves', label: 'طلبات الاستئذان', count: db.leaves.filter((l) =>
-          (isComplex ? true : l.mosqueId === mid) && l.status === 'pending').length },
+        ...(canManage ? [{ value: 'team' as const, label: 'حضور الموظفين' }] : []),
+        {
+          value: 'leaves',
+          label: isMine ? 'استئذاناتي' : 'طلبات الاستئذان',
+          count: db.leaves.filter((l) =>
+            (isMine ? l.personId === user!.id : isComplex ? true : l.mosqueId === mid) && l.status === 'pending').length,
+        },
       ]} />
 
-      {tab === 'me' && <MyAttendance mosqueId={isComplex ? (user!.mosqueId as string) : mid} onLeave={() => setLeaveOpen(true)} />}
+      {tab === 'me' && <MyAttendance mosqueId={mosqueId} onLeave={() => setLeaveOpen(true)} />}
 
       {tab === 'team' && canManage && (
         <TeamAttendance mid={isComplex ? fMosque : mid} isComplex={isComplex}
@@ -57,7 +64,7 @@ export default function Attendance({ scope }: { scope?: 'complex' }) {
           ) : null} />
       )}
 
-      {tab === 'leaves' && <Leaves mid={isComplex ? '' : mid} onNew={() => setLeaveOpen(true)} />}
+      {tab === 'leaves' && <Leaves mid={isComplex || isMine ? '' : mid} onNew={() => setLeaveOpen(true)} />}
 
       <LeaveModal open={leaveOpen} onClose={() => setLeaveOpen(false)} mosqueId={mosqueId} />
     </div>
@@ -167,7 +174,7 @@ function MyAttendance({ mosqueId, onLeave }: { mosqueId: string; onLeave: () => 
           </div>
           <div className="grid grid-cols-3 gap-px bg-line border border-line rounded-xl overflow-hidden mt-4">
             {([['حضور', st.present, false], ['غياب', st.absent, st.absent > 0], ['استئذان', st.excused, false]] as const).map(([l, v, hot]) => (
-              <div key={l} className={`px-3 py-2.5 text-center ${hot ? 'bg-orange-50' : 'bg-white'}`}>
+              <div key={l} className={`px-3 py-2.5 text-center ${hot ? 'bg-orange-50' : 'bg-surface'}`}>
                 <p className={`num text-[18px] ${hot ? 'text-orange-700' : 'text-navy-800'}`}>{v}</p>
                 <p className="text-[10.5px] font-bold text-ink-400 mt-0.5">{l}</p>
               </div>
@@ -223,7 +230,7 @@ function TeamAttendance({ mid, isComplex, filter }: { mid: string; isComplex: bo
   const markRestAbsent = () => {
     const missing = staff.filter((p) => !get(p.id))
     if (!missing.length) return toast('لا يوجد من لم يُسجَّل له حضور.', 'info')
-    if (!confirm(`سيتم احتساب الغياب لـ ${missing.length} من فريق العمل بتاريخ ${date}. متابعة؟`)) return
+    if (!confirm(`سيتم احتساب الغياب لـ ${missing.length} من الموظفين بتاريخ ${date}. متابعة؟`)) return
     set((d) => {
       missing.forEach((p) => d.attendance.push({
         id: uid('a'), mosqueId: p.mosqueId as string, personId: p.id, date,
@@ -240,13 +247,13 @@ function TeamAttendance({ mid, isComplex, filter }: { mid: string; isComplex: bo
   return (
     <div className="space-y-5">
       <StatStrip items={[
-        { label: 'الإداريون', value: staff.length },
+        { label: 'الموظفون', value: staff.length },
         { label: 'حاضر', value: present },
         { label: 'مستأذن', value: excused },
         { label: 'غائب', value: absent, accent: absent > 0 },
       ]} />
 
-      <Card title="كشف حضور الإداريين" subtitle={`${fmtDayName(date)} · ${fmtDate(date)}`} pad={false}
+      <Card title="كشف حضور الموظفين" subtitle={`${fmtDayName(date)} · ${fmtDate(date)}`} pad={false}
         action={<div className="flex flex-wrap gap-2 items-center">
           {filter}
           <input type="date" className="field !py-2 !text-[13px] w-auto" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -256,7 +263,7 @@ function TeamAttendance({ mid, isComplex, filter }: { mid: string; isComplex: bo
           <table className="w-full">
             <thead className="bg-navy-50">
               <tr>
-                <th className="th">العامل</th>
+                <th className="th">الموظف</th>
                 {isComplex && !mid && <th className="th">المسجد</th>}
                 <th className="th">الوظيفة</th>
                 <th className="th">وقت التحضير</th>
@@ -362,7 +369,7 @@ function Leaves({ mid, onNew }: { mid: string; onNew: () => void }) {
   }
 
   return (
-    <Card title="طلبات الاستئذان" subtitle="للإداريين والمعلمين — المعتمد يُخصم منه نصف يوم بدل يوم كامل"
+    <Card title="طلبات الاستئذان" subtitle="للموظفين والمعلمين — المعتمد يُخصم منه نصف يوم بدل يوم كامل"
       action={<button className="btn-accent btn-sm" onClick={onNew}>＋ طلب استئذان</button>} pad={false}>
       {rows.length === 0 ? <Empty icon="📝" title="لا توجد طلبات" /> : (
         <ul className="divide-y divide-line">

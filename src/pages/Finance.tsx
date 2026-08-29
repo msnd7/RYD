@@ -39,7 +39,7 @@ export default function Finance({ scope }: { scope?: 'complex' }) {
     return (
       <Card>
         <Empty icon="🔒" title="الإدارة المالية مقصورة على المدير ومن يفوّضه"
-          hint="يمكن لمدير المجمع منحك الصلاحية من صفحة فريق العمل بتفعيل «تفويض بالوصول للإدارة المالية»." />
+          hint="يمكن لمدير المجمع منحك الصلاحية من صفحة الموظفين بتفعيل «تفويض بالوصول للإدارة المالية»." />
       </Card>
     )
   }
@@ -51,7 +51,7 @@ export default function Finance({ scope }: { scope?: 'complex' }) {
       <PageHeader
         eyebrow={isComplex ? 'الإدارة العامة' : mosqueName(db, mid)}
         title="الإدارة المالية"
-        description="طلبات صرف العهد واعتمادها، وتسجيل المصروفات بفواتيرها، وإقفال العهد وإعادة المتبقي، ورواتب الإداريين والمعلمين بعد خصومات الحضور."
+        description="طلبات صرف العهد واعتمادها، وتسجيل المصروفات بفواتيرها، وإقفال العهد وإعادة المتبقي، ورواتب الموظفين والمعلمين بعد خصومات الحضور."
       />
       <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
         { value: 'custody', label: 'العهد والمصروفات' },
@@ -348,7 +348,7 @@ function Payroll({ mosqueId, isComplex }: { mosqueId: string; isComplex: boolean
         subtitle={`الغياب يُخصم يومًا كاملًا، والاستئذان المعتمد نصف يوم، على أساس ${db.settings.workDaysPerMonth} يوم عمل شهريًا`}
         action={
           <Tabs value={who} onChange={(v) => setWho(v as any)} items={[
-            { value: 'staff', label: 'الإداريون', count: staffRows.length },
+            { value: 'staff', label: 'الموظفون', count: staffRows.length },
             { value: 'teachers', label: 'المعلمون', count: teacherRows.length },
           ]} />
         }
@@ -358,7 +358,7 @@ function Payroll({ mosqueId, isComplex }: { mosqueId: string; isComplex: boolean
           <Empty icon="💼"
             title={who === 'staff' ? 'لا يوجد إداريون برواتب مسجّلة' : 'لا يوجد معلمون برواتب مسجّلة'}
             hint={who === 'staff'
-              ? 'سجّل الراتب في بيانات كل إداري ليظهر في المسيّر.'
+              ? 'سجّل الراتب في بيانات كل موظف ليظهر في المسيّر.'
               : 'سجّل راتب كل معلم من صفحة المعلمين ليُحتسب خصم الغياب والاستئذان.'} />
         ) : (
           <>

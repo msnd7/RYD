@@ -13,7 +13,7 @@ const TARGET_LABEL: Record<AnnounceTarget, string> = {
   all: 'الجميع', mosque: 'مسجد محدد', committee: 'لجنة محددة', person: 'شخص بعينه',
 }
 
-export default function Announcements({ scope }: { scope?: 'complex' }) {
+export default function Announcements({ scope }: { scope?: 'complex' | 'mine' }) {
   const { mid = '' } = useParams()
   const { db, set } = useDb()
   const { user, isDirector } = useAuth()
@@ -21,10 +21,10 @@ export default function Announcements({ scope }: { scope?: 'complex' }) {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Announcement | null>(null)
 
-  const canPublish = isDirector || user?.role === 'supervisor'
+  const canPublish = scope !== 'mine' && (isDirector || user?.role === 'supervisor')
 
   let list = visibleAnnouncements(db, user!)
-  if (scope !== 'complex' && mid) {
+  if (scope !== 'complex' && scope !== 'mine' && mid) {
     list = list.filter((a) =>
       a.target === 'all' ||
       (a.target === 'mosque' && a.targetId === mid) ||
@@ -47,9 +47,11 @@ export default function Announcements({ scope }: { scope?: 'complex' }) {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow={scope === 'complex' ? 'الإدارة العامة' : mosqueName(db, mid)}
+        eyebrow={scope === 'complex' ? 'الإدارة العامة' : scope === 'mine' ? 'مساحتي' : mosqueName(db, mid)}
         title="الإعلانات والرسائل"
-        description="وجّه رسالتك لجميع منسوبي المجمع أو لمسجد أو للجنة أو لشخص بعينه، مع خيار تنسيق النص بمساعد ذكي قبل النشر."
+        description={scope === 'mine'
+          ? 'الرسائل الموجّهة إليك أو إلى لجنتك أو إلى جميع منسوبي المجمع.'
+          : 'وجّه رسالتك لجميع منسوبي المجمع أو لمسجد أو للجنة أو لشخص بعينه، مع خيار تنسيق النص بمساعد ذكي قبل النشر.'}
         actions={canPublish && <button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ إعلان جديد</button>}
       />
       <Card pad={false}>

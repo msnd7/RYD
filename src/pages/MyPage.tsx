@@ -32,7 +32,7 @@ export default function MyPage() {
       <TopBar title="صفحتي" subtitle={`${user.jobTitle} · ${mosqueName(db, user.mosqueId)}`} back="/" />
       <div className="max-w-[1180px] mx-auto p-4 sm:p-6 space-y-5 fade-in">
         <div className="rounded-3xl bg-gradient-to-bl from-navy-700 to-navy-900 text-white p-6 flex flex-wrap items-center gap-5">
-          <span className="w-16 h-16 rounded-2xl bg-white/15 grid place-items-center text-2xl font-display font-black">
+          <span className="w-16 h-16 rounded-2xl bg-surface/15 grid place-items-center text-2xl font-display font-black">
             {user.name[0]}
           </span>
           <div className="min-w-0">
@@ -40,17 +40,17 @@ export default function MyPage() {
             <p className="text-white/70 text-[12.5px]">{user.jobTitle} · {mosqueName(db, user.mosqueId)}</p>
             <div className="flex flex-wrap gap-1.5 mt-2">
               {user.committeeIds.map((c) => (
-                <span key={c} className="chip bg-white/15 text-white">{committeeName(db, c)}</span>
+                <span key={c} className="chip bg-surface/15 text-white">{committeeName(db, c)}</span>
               ))}
               {user.financeAccess && <span className="chip bg-orange-400 text-white">تفويض مالي</span>}
             </div>
           </div>
           <div className="sm:mr-auto flex items-center gap-4">
-            <div className="text-center bg-white/10 rounded-2xl px-5 py-3">
+            <div className="text-center bg-surface/10 rounded-2xl px-5 py-3">
               <div className="text-2xl font-display font-black">{st.rate}%</div>
               <div className="text-[10px] font-bold text-white/70">حضور ٣٠ يومًا</div>
             </div>
-            <div className="text-center bg-white/10 rounded-2xl px-5 py-3">
+            <div className="text-center bg-surface/10 rounded-2xl px-5 py-3">
               <div className="text-2xl font-display font-black">{tc.total - tc.done}</div>
               <div className="text-[10px] font-bold text-white/70">بنود مفتوحة</div>
             </div>

@@ -1,12 +1,14 @@
-import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { DbProvider, useDb } from './store/db'
+import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom'
+import { DbProvider } from './store/db'
 import { AuthProvider, useAuth } from './store/auth'
-import { LogoMark } from './components/Brand'
+import { ThemeProvider } from './store/theme'
 import { ToastHost } from './components/ui'
-import { MosqueLayout, ComplexLayout } from './components/Layout'
+import { MosqueLayout, ComplexLayout, MemberLayout } from './components/Layout'
 import { Runtime } from './components/Runtime'
+import { LogoMark } from './components/Brand'
 
 import Login from './pages/Login'
+import ChangePassword from './pages/ChangePassword'
 import ComplexHome from './pages/ComplexHome'
 import ComplexDashboard from './pages/ComplexDashboard'
 import ComplexSettings from './pages/ComplexSettings'
@@ -22,7 +24,7 @@ import Reports from './pages/Reports'
 import Announcements from './pages/Announcements'
 import Finance from './pages/Finance'
 import MyPage from './pages/MyPage'
-import ChangePassword from './pages/ChangePassword'
+import MyCommittee from './pages/MyCommittee'
 
 function Booting() {
   return (
@@ -35,16 +37,41 @@ function Booting() {
   )
 }
 
+/** الوجهة الافتراضية لكل صلاحية */
+function homeFor(role?: string, mosqueId?: string) {
+  if (role === 'director') return '/'
+  if (role === 'supervisor') return `/m/${mosqueId}`
+  return '/my'
+}
+
 function Guard({ children }: { children: JSX.Element }) {
   const { user, mustChangePassword, authReady } = useAuth()
   const loc = useLocation()
   if (!authReady) return <Booting />
   if (!user) return <Navigate to="/login" replace state={{ from: loc.pathname }} />
-  // إلزام بتغيير الرمز المبدئي قبل الدخول لأي شاشة
   if (mustChangePassword && loc.pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />
   }
   return children
+}
+
+/** شاشات مدير المجمع وحده */
+function DirectorOnly({ children }: { children: JSX.Element }) {
+  const { user } = useAuth()
+  if (user && user.role !== 'director') {
+    return <Navigate to={homeFor(user.role, user.mosqueId as string)} replace />
+  }
+  return children
+}
+
+/** مسجد بعينه: المدير يدخل أيّها شاء، والمشرف مسجده فقط، والموظف لا يدخلها */
+function MosqueAccess({ children }: { children: JSX.Element }) {
+  const { user } = useAuth()
+  const { mid } = useParams()
+  if (!user) return null
+  if (user.role === 'director') return children
+  if (user.role === 'supervisor' && user.mosqueId === mid) return children
+  return <Navigate to={homeFor(user.role, user.mosqueId as string)} replace />
 }
 
 function RequireSession({ children }: { children: JSX.Element }) {
@@ -58,8 +85,18 @@ function RequireSession({ children }: { children: JSX.Element }) {
 function LoginGate() {
   const { user, authReady, mustChangePassword } = useAuth()
   if (!authReady) return <Booting />
-  if (user) return <Navigate to={mustChangePassword ? '/change-password' : '/'} replace />
+  if (user) {
+    return <Navigate to={mustChangePassword ? '/change-password' : homeFor(user.role, user.mosqueId as string)} replace />
+  }
   return <Login />
+}
+
+/** يوجّه الجذر حسب الصلاحية */
+function RootRedirect() {
+  const { user } = useAuth()
+  if (!user) return null
+  if (user.role === 'director') return <ComplexHome />
+  return <Navigate to={homeFor(user.role, user.mosqueId as string)} replace />
 }
 
 function Shell() {
@@ -69,20 +106,22 @@ function Shell() {
       <Route path="/change-password" element={<RequireSession><ChangePassword /></RequireSession>} />
       <Route path="/me" element={<Guard><MyPage /></Guard>} />
 
+      {/* ===== واجهة المجمع — لمدير المجمع ===== */}
       <Route path="/" element={<Guard><ComplexLayout /></Guard>}>
-        <Route index element={<ComplexHome />} />
-        <Route path="complex/dashboard" element={<ComplexDashboard />} />
-        <Route path="complex/tasks" element={<Tasks scope="complex" />} />
-        <Route path="complex/attendance" element={<Attendance scope="complex" />} />
-        <Route path="complex/staff" element={<Staff scope="complex" />} />
-        <Route path="complex/meetings" element={<Meetings scope="complex" />} />
-        <Route path="complex/reports" element={<Reports scope="complex" />} />
-        <Route path="complex/announcements" element={<Announcements scope="complex" />} />
-        <Route path="complex/finance" element={<Finance scope="complex" />} />
-        <Route path="complex/settings" element={<ComplexSettings />} />
+        <Route index element={<RootRedirect />} />
+        <Route path="complex/dashboard" element={<DirectorOnly><ComplexDashboard /></DirectorOnly>} />
+        <Route path="complex/tasks" element={<DirectorOnly><Tasks scope="complex" /></DirectorOnly>} />
+        <Route path="complex/attendance" element={<DirectorOnly><Attendance scope="complex" /></DirectorOnly>} />
+        <Route path="complex/staff" element={<DirectorOnly><Staff scope="complex" /></DirectorOnly>} />
+        <Route path="complex/meetings" element={<DirectorOnly><Meetings scope="complex" /></DirectorOnly>} />
+        <Route path="complex/reports" element={<DirectorOnly><Reports scope="complex" /></DirectorOnly>} />
+        <Route path="complex/announcements" element={<DirectorOnly><Announcements scope="complex" /></DirectorOnly>} />
+        <Route path="complex/finance" element={<DirectorOnly><Finance scope="complex" /></DirectorOnly>} />
+        <Route path="complex/settings" element={<DirectorOnly><ComplexSettings /></DirectorOnly>} />
       </Route>
 
-      <Route path="/m/:mid" element={<Guard><MosqueLayout /></Guard>}>
+      {/* ===== واجهة المسجد — للمدير ومشرف المسجد ===== */}
+      <Route path="/m/:mid" element={<Guard><MosqueAccess><MosqueLayout /></MosqueAccess></Guard>}>
         <Route index element={<Dashboard />} />
         <Route path="tasks" element={<Tasks />} />
         <Route path="attendance" element={<Attendance />} />
@@ -96,6 +135,15 @@ function Shell() {
         <Route path="settings" element={<MosqueSettings />} />
       </Route>
 
+      {/* ===== مساحة الموظف وعضو اللجنة ===== */}
+      <Route path="/my" element={<Guard><MemberLayout /></Guard>}>
+        <Route index element={<Tasks scope="mine" />} />
+        <Route path="attendance" element={<Attendance scope="mine" />} />
+        <Route path="committee" element={<MyCommittee />} />
+        <Route path="announcements" element={<Announcements scope="mine" />} />
+        <Route path="report" element={<Reports scope="mine" />} />
+      </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
@@ -106,15 +154,17 @@ const Router = import.meta.env.DEV ? BrowserRouter : HashRouter
 
 export default function App() {
   return (
-    <DbProvider>
-      <AuthProvider>
-        <ToastHost>
-          <Router>
-            <Shell />
-            <Runtime />
-          </Router>
-        </ToastHost>
-      </AuthProvider>
-    </DbProvider>
+    <ThemeProvider>
+      <DbProvider>
+        <AuthProvider>
+          <ToastHost>
+            <Router>
+              <Shell />
+              <Runtime />
+            </Router>
+          </ToastHost>
+        </AuthProvider>
+      </DbProvider>
+    </ThemeProvider>
   )
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/auth'
 import { useDb } from '../store/db'
 import { LogoMark } from '../components/Brand'
+import { ThemeToggle } from '../store/theme'
 import { useToast } from '../components/ui'
 
 /** شاشة إجبارية تظهر عند أول دخول أو بعد إعادة تعيين الرمز من المدير */
@@ -54,7 +55,8 @@ export default function ChangePassword() {
 
   return (
     <div className="min-h-[100dvh] grid place-items-center px-5 py-10
-      bg-gradient-to-b from-white via-navy-50 to-navy-100/60">
+      bg-gradient-to-b from-surface via-navy-50 to-navy-100/60">
+      <div className="absolute top-4 left-4"><ThemeToggle /></div>
       <div className="w-full max-w-[420px]">
         <div className="flex flex-col items-center text-center mb-7">
           <LogoMark h={96} />

@@ -49,7 +49,7 @@ export function AiTextArea({ value, onChange, rows = 5, placeholder, kind = 'mes
           <div className="flex items-center gap-2 mb-2">
             <span className="chip bg-navy-600 text-white">✨ الصياغة المقترحة</span>
           </div>
-          <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-ink-900 bg-white rounded-xl p-3 border border-navy-100">
+          <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-ink-900 bg-surface rounded-xl p-3 border border-navy-100">
             {draft}
           </pre>
           <div className="flex flex-wrap gap-2 mt-3">

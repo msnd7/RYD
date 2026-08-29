@@ -19,29 +19,34 @@ import {
 import { KIND_LABEL, STATUS_LABEL } from './Tasks'
 import type { PeriodReport, UploadedFile } from '../types'
 
-export default function Reports({ scope }: { scope?: 'complex' }) {
+export default function Reports({ scope }: { scope?: 'complex' | 'mine' }) {
   const { mid = '' } = useParams()
   const { user, isDirector } = useAuth()
   const isComplex = scope === 'complex'
+  const isMine = scope === 'mine'
   const [tab, setTab] = useState<'person' | 'committee' | 'mosque' | 'uploads'>('person')
 
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow={isComplex ? 'الإدارة العامة' : undefined}
-        title="التقارير"
-        description="تقارير جاهزة للطباعة أو الحفظ PDF — للشخص واللجنة والمسجد، إضافة إلى رفع التقارير الأسبوعية والشهرية بشواهدها."
+        eyebrow={isMine ? 'مساحتي' : isComplex ? 'الإدارة العامة' : undefined}
+        title={isMine ? 'تقريري' : 'التقارير'}
+        description={isMine
+          ? 'حضورك ومهامك وأثرها على راتبك خلال الفترة — قابل للطباعة أو الحفظ PDF.'
+          : 'تقارير جاهزة للطباعة أو الحفظ PDF — للشخص واللجنة والمسجد، إضافة إلى رفع التقارير الأسبوعية والشهرية بشواهدها.'}
       />
-      <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
-        { value: 'person', label: 'تقرير شخص' },
-        { value: 'committee', label: 'تقرير لجنة' },
-        { value: 'mosque', label: isComplex ? 'تقرير المجمع' : 'تقرير المسجد' },
-        { value: 'uploads', label: 'التقارير الدورية المرفوعة' },
-      ]} />
-      {tab === 'person' && <PersonReport mid={isComplex ? '' : mid} />}
-      {tab === 'committee' && <CommitteeReport mid={isComplex ? '' : mid} />}
-      {tab === 'mosque' && <MosqueReport mid={isComplex ? '' : mid} isComplex={isComplex} />}
-      {tab === 'uploads' && <Uploads mid={isComplex ? '' : mid} isComplex={isComplex} />}
+      {!isMine && (
+        <Tabs value={tab} onChange={(v) => setTab(v as any)} items={[
+          { value: 'person', label: 'تقرير شخص' },
+          { value: 'committee', label: 'تقرير لجنة' },
+          { value: 'mosque', label: isComplex ? 'تقرير المجمع' : 'تقرير المسجد' },
+          { value: 'uploads', label: 'التقارير الدورية المرفوعة' },
+        ]} />
+      )}
+      {(isMine || tab === 'person') && <PersonReport mid={isComplex || isMine ? '' : mid} lockToSelf={isMine} />}
+      {!isMine && tab === 'committee' && <CommitteeReport mid={isComplex ? '' : mid} />}
+      {!isMine && tab === 'mosque' && <MosqueReport mid={isComplex ? '' : mid} isComplex={isComplex} />}
+      {!isMine && tab === 'uploads' && <Uploads mid={isComplex ? '' : mid} isComplex={isComplex} />}
     </div>
   )
 }
@@ -53,13 +58,13 @@ const RANGES = [
 ]
 
 /* ================= تقرير شخص ================= */
-function PersonReport({ mid }: { mid: string }) {
+function PersonReport({ mid, lockToSelf }: { mid: string; lockToSelf?: boolean }) {
   const { db } = useDb()
   const { user, isDirector } = useAuth()
   const [range, setRange] = useState('30')
 
   const pool = mid ? staffOf(db, mid) : db.people.filter((p) => p.active)
-  const canPickOthers = isDirector || user?.role === 'supervisor'
+  const canPickOthers = !lockToSelf && (isDirector || user?.role === 'supervisor')
   const [pid, setPid] = useState(canPickOthers ? (pool[0]?.id ?? user!.id) : user!.id)
   const person = db.people.find((p) => p.id === pid) ?? user!
 
@@ -320,7 +325,7 @@ function MosqueReport({ mid, isComplex }: { mid: string; isComplex: boolean }) {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4">
-                  <Stat label="فريق العمل" value={staff.length} />
+                  <Stat label="الموظفين" value={staff.length} />
                   <Stat label="المعلمون" value={teachers.length} />
                   <Stat label="حضور الفريق" value={`${rate}%`} tone={rate >= 85 ? 'olive' : rate >= 70 ? 'gold' : 'rose'} />
                   <Stat label="حضور المعلمين" value={`${tRate}%`} tone={tRate >= 85 ? 'olive' : tRate >= 70 ? 'gold' : 'rose'} />

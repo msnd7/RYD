@@ -39,7 +39,7 @@ export default function ComplexHome() {
 
       <StatStrip items={[
         { label: 'المساجد', value: db.mosques.length },
-        { label: 'الإداريون', value: allStaff.length },
+        { label: 'الموظفون', value: allStaff.length },
         { label: 'المعلمون', value: db.teachers.filter((t) => t.active).length },
         { label: 'متوسط الحضور', value: allStaff.length ? `${rate}%` : '—', hint: 'آخر ٣٠ يومًا' },
         {
@@ -69,7 +69,7 @@ export default function ComplexHome() {
           <Card title="اختصارات">
             <div className="grid grid-cols-2 gap-2">
               {[
-                ['الإداريون', '/complex/staff'],
+                ['الموظفون', '/complex/staff'],
                 ['إعلان جديد', '/complex/announcements'],
                 ['محضر اجتماع', '/complex/meetings'],
                 ['التقارير', '/complex/reports'],
@@ -117,9 +117,9 @@ function SetupChecklist() {
     },
     {
       done: db.teachers.length > 0,
-      title: 'ثم يضيف كل مشرف إداريي مسجده ومعلميه',
-      hint: 'الإداري يدخل بحسابه ويحضّر نفسه، والمعلم يحضّره المشرف.',
-      to: '/complex/staff', cta: 'عرض الإداريين',
+      title: 'ثم يضيف كل مشرف موظفي مسجده ومعلميه',
+      hint: 'الموظف يدخل بحسابه ويحضّر نفسه، والمعلم يحضّره المشرف.',
+      to: '/complex/staff', cta: 'عرض الموظفين',
     },
   ]
   const doneCount = steps.filter((s) => s.done).length
@@ -183,7 +183,7 @@ function MosqueCard({ id }: { id: string }) {
           ['حضور اليوم', presentToday],
           ['مهام مفتوحة', tasks.total - tasks.done],
         ].map(([l, v]) => (
-          <div key={l as string} className="bg-white py-2.5 text-center">
+          <div key={l as string} className="bg-surface py-2.5 text-center">
             <dd className="num text-[16px] text-navy-800">{v as number}</dd>
             <dt className="text-[9.5px] font-bold text-ink-400 mt-0.5">{l as string}</dt>
           </div>

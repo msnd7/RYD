@@ -32,7 +32,7 @@ export function BarChart({ data, height = 150, colors }: {
 }
 
 /* دائرة نسبة */
-export function Donut({ value, size = 118, stroke = 13, tone = '#12395F', label, sub }: {
+export function Donut({ value, size = 118, stroke = 13, tone = 'rgb(var(--navy-600))', label, sub }: {
   value: number; size?: number; stroke?: number; tone?: string; label?: string; sub?: string
 }) {
   const r = (size - stroke) / 2
@@ -41,7 +41,7 @@ export function Donut({ value, size = 118, stroke = 13, tone = '#12395F', label,
   return (
     <div className="relative inline-grid place-items-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E3EAF2" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgb(var(--line))" strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={tone} strokeWidth={stroke}
           strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off}
           style={{ transition: 'stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)' }} />
@@ -78,10 +78,12 @@ export function SplitBar({ parts }: { parts: { value: number; color: string; lab
 }
 
 export const C = {
-  present: '#1A4877', absent: '#D46A04', excused: '#FFB666',
-  done: '#12395F', stuck: '#D46A04', postponed: '#FFB666', pending: '#80A4C8',
-  navy: '#12395F', navyMid: '#2B5D91', navySoft: '#80A4C8',
-  orange: '#F0820E', orangeDeep: '#D46A04', orangeSoft: '#FFD29E',
+  present: 'rgb(var(--navy-600))', absent: 'rgb(var(--orange-500))', excused: 'rgb(var(--orange-300))',
+  done: 'rgb(var(--navy-600))', stuck: 'rgb(var(--orange-500))',
+  postponed: 'rgb(var(--orange-300))', pending: 'rgb(var(--navy-300))',
+  navy: 'rgb(var(--navy-600))', navyMid: 'rgb(var(--navy-500))', navySoft: 'rgb(var(--navy-300))',
+  orange: 'rgb(var(--orange-500))', orangeDeep: 'rgb(var(--orange-600))', orangeSoft: 'rgb(var(--orange-300))',
   // أسماء متوافقة مع الاستخدامات السابقة
-  brand: '#12395F', olive: '#1A4877', gold: '#FFB666', rose: '#D46A04',
+  brand: 'rgb(var(--navy-600))', olive: 'rgb(var(--navy-500))',
+  gold: 'rgb(var(--orange-300))', rose: 'rgb(var(--orange-500))',
 }

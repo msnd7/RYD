@@ -74,7 +74,7 @@ export function ActionInbox({ mosqueId }: { mosqueId?: string }) {
     items.push({
       id: `ct-${p.id}`, icon: '🖊️', tone: 'bg-navy-100 text-navy-800',
       text: `عقد ${p.name} بانتظار التوقيع`,
-      sub: mosqueName(db, p.mosqueId), to: `/m/${p.mosqueId}/staff`, cta: 'فتح ملف العامل',
+      sub: mosqueName(db, p.mosqueId), to: `/m/${p.mosqueId}/staff`, cta: 'فتح ملف الموظف',
     })
   })
 

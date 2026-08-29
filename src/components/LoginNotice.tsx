@@ -9,7 +9,7 @@ const SEEN = 'ryd.notice.seen'
 
 /**
  * إشعار يظهر لكل مستخدم عند دخوله للمنصة لمدة عشر ثوانٍ ثم يختفي تلقائيًا،
- * ويعرض المهام والقرارات والتوصيات التي اقترب موعدها أو تأخرت.
+ * ويعرض قائمة المهام التي اقترب موعدها أو تأخرت.
  */
 export function LoginNotice() {
   const { db } = useDb()
@@ -40,7 +40,7 @@ export function LoginNotice() {
 
   return (
     <div className="fixed z-[70] top-4 left-4 right-4 sm:right-auto sm:left-4 sm:w-[400px] no-print pop-in">
-      <div className="rounded-3xl bg-white shadow-lift border border-navy-100 overflow-hidden">
+      <div className="rounded-3xl bg-surface shadow-lift border border-navy-100 overflow-hidden">
         <div className="bg-gradient-to-l from-navy-700 to-navy-900 text-white px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">🔔</span>
@@ -51,7 +51,7 @@ export function LoginNotice() {
               </div>
             </div>
           </div>
-          <button onClick={() => setShow(false)} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-white/15" aria-label="إغلاق">✕</button>
+          <button onClick={() => setShow(false)} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface/15" aria-label="إغلاق">✕</button>
         </div>
 
         <ul className="max-h-[46vh] overflow-y-auto divide-y divide-line">

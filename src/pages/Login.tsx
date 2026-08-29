@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/auth'
 import { useDb } from '../store/db'
 import { LogoMark } from '../components/Brand'
+import { ThemeToggle } from '../store/theme'
 
 const FEATURES = [
   ['ثلاثة مساجد', 'كل مسجد بإدارة مستقلة، ومتابعة موحّدة للمجمع'],
@@ -42,10 +43,11 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[1.1fr_1fr] bg-white">
+    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[1.1fr_1fr] bg-surface">
+      <div className="absolute top-4 left-4 z-10"><ThemeToggle /></div>
       {/* ===== لوحة الهوية — خلفية فاتحة ليظهر الشعار على طبيعته ===== */}
       <aside className="relative hidden lg:flex flex-col justify-center gap-12 p-12 xl:p-16 overflow-hidden
-        bg-gradient-to-b from-white via-navy-50 to-navy-100/70">
+        bg-gradient-to-b from-surface via-navy-50 to-navy-100/70">
         <div className="absolute inset-0 opacity-[0.4]"
           style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #C7D6E6 1px, transparent 0)', backgroundSize: '22px 22px' }} />
         <div className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-orange-400 via-orange-500 to-transparent" />

@@ -232,7 +232,7 @@ function AppSettings() {
     const p = await requestNotificationPermission()
     if (p !== 'granted') return toast('لم يُمنح إذن الإشعارات.', 'bad')
     set((d) => { d.settings.pushEnabled = true })
-    await showNotification('تم تفعيل التذكيرات ✅', 'ستصلك تنبيهات باقتراب مواعيد المهام والقرارات.')
+    await showNotification('تم تفعيل التذكيرات ✅', 'ستصلك تنبيهات باقتراب مواعيد قائمة المهام.')
     toast('تم تفعيل الإشعارات')
   }
 
@@ -271,7 +271,7 @@ function AppSettings() {
       </Card>
 
       <Card title="إشعارات التذكير"
-        subtitle="تنبيه باقتراب مواعيد المهام والقرارات والتوصيات">
+        subtitle="تنبيه باقتراب مواعيد قائمة المهام">
         <div className="flex flex-wrap items-center gap-3">
           <Badge tone={perm === 'granted' ? 'ok' : perm === 'denied' ? 'bad' : 'warn'}>
             {perm === 'granted' ? 'الإذن ممنوح' : perm === 'denied' ? 'الإذن مرفوض' : perm === 'unsupported' ? 'غير مدعوم' : 'لم يُطلب بعد'}
