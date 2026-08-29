@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { randomUUID } from 'node:crypto'
-import { fail, sessionFrom } from '../_lib/auth'
-import { ensureSchema, query } from '../_lib/db'
+import { fail, sessionFrom } from '../_lib/auth.js'
+import { ensureSchema, query } from '../_lib/db.js'
 
 /** حدّ Vercel لجسم الطلب ٤٫٥ ميجابايت، و base64 يزيد الحجم نحو ٣٣٪ */
 const MAX_BYTES = 3 * 1024 * 1024

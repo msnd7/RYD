@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fail, sessionFrom } from '../_lib/auth'
-import { findById, loadState, sanitize } from '../_lib/state'
+import { fail, sessionFrom } from '../_lib/auth.js'
+import { findById, loadState, sanitize } from '../_lib/state.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store')

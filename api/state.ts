@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fail, sessionFrom } from './_lib/auth'
-import { enforcePermissions, findById, loadState, mergeSecrets, sanitize, saveState } from './_lib/state'
+import { fail, sessionFrom } from './_lib/auth.js'
+import { enforcePermissions, findById, loadState, mergeSecrets, sanitize, saveState } from './_lib/state.js'
 
 /**
  * GET  /api/state           → { doc, version } الوثيقة كاملة بلا أسرار

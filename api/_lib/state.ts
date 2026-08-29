@@ -1,6 +1,6 @@
-import { ensureSchema, query } from './db'
-import { hashPassword, normEmail } from './auth'
-import { buildSeed, DEFAULT_PASSWORD } from '../../src/data/seed'
+import { ensureSchema, query } from './db.js'
+import { hashPassword, normEmail } from './auth.js'
+import { buildSeed, DEFAULT_PASSWORD } from '../../src/data/seed.js'
 import type { DB, Person } from '../../src/types'
 
 export const DOC_ID = 'main'

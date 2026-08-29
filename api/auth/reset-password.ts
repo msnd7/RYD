@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fail, hashPassword, sessionFrom } from '../_lib/auth'
-import { findById, loadState, mutateState } from '../_lib/state'
+import { fail, hashPassword, sessionFrom } from '../_lib/auth.js'
+import { findById, loadState, mutateState } from '../_lib/state.js'
 
 /** إعادة تعيين رمز أي حساب إلى الرمز المبدئي — لمدير المجمع فقط */
 export default async function handler(req: VercelRequest, res: VercelResponse) {

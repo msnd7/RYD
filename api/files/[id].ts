@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { fail, sessionFrom } from '../_lib/auth'
-import { ensureSchema, query } from '../_lib/db'
+import { fail, sessionFrom } from '../_lib/auth.js'
+import { ensureSchema, query } from '../_lib/db.js'
 
 /** تنزيل ملف مرفوع — يتطلب جلسة صالحة */
 export default async function handler(req: VercelRequest, res: VercelResponse) {

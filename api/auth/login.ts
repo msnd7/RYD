@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createSessionToken, fail, setSessionCookie, verifyPassword } from '../_lib/auth'
-import { findByEmail, loadState, sanitize, saveState } from '../_lib/state'
+import { createSessionToken, fail, setSessionCookie, verifyPassword } from '../_lib/auth.js'
+import { findByEmail, loadState, sanitize, saveState } from '../_lib/state.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return fail(res, 405, 'method_not_allowed')

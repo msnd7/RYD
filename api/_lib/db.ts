@@ -1,4 +1,7 @@
-import { Pool } from 'pg'
+// pg مكتبة CommonJS: الاستيراد الافتراضي أضمن داخل وحدات ESM
+import pg from 'pg'
+const { Pool } = pg
+type Pool = InstanceType<typeof pg.Pool>
 
 /**
  * اتصال قاعدة البيانات (PostgreSQL).
