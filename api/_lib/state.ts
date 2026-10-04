@@ -155,6 +155,11 @@ export function enforcePermissions(
   // الإعدادات العامة والنطاق المكاني للمساجد: لمدير المجمع وحده
   out.settings = current.settings
   out.mosques = current.mosques
+  // مسيّرات الرواتب وعقود المعلمين: للمدير ومن فوّضه بالإدارة المالية
+  if (!actor.financeAccess) {
+    out.payrollRuns = current.payrollRuns ?? []
+    out.teacherContracts = current.teacherContracts ?? []
+  }
 
   /** ما يجوز للشخص تغييره في ملفه: جواله وتوقيعه على عقده */
   const selfSafe = (next: StoredPerson, prev: StoredPerson): StoredPerson => ({

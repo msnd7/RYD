@@ -1,10 +1,11 @@
 import type { DB } from '../types'
 
-export const DB_VERSION = 3
+export const DB_VERSION = 4
 
 const LISTS = [
   'mosques', 'people', 'committees', 'tasks', 'attendance', 'leaves',
   'meetings', 'reports', 'announcements', 'custodies', 'teachers', 'teacherAttendance',
+  'teacherContracts', 'payrollRuns', 'teamNotes',
 ] as const
 
 /**
@@ -39,6 +40,7 @@ export function migrate(doc: any): boolean {
   fill(doc.settings, 'defaultPassword', '1234')
   fill(doc.settings, 'pushEnabled', false)
   fill(doc.settings, 'lateDeductionDays', 0)
+  fill(doc.settings, 'payDay', 1)
 
   // المساجد
   doc.mosques.forEach((m: any) => {
@@ -102,6 +104,13 @@ export function migrate(doc: any): boolean {
     fill(m, 'agenda', ''); fill(m, 'minutes', ''); fill(m, 'decisions', '')
   })
   doc.reports.forEach((r: any) => { if (!Array.isArray(r.files)) { r.files = []; changed = true } })
+
+  // التوصيات: سجل الاطلاع
+  doc.teamNotes.forEach((n: any) => {
+    if (!Array.isArray(n.acks)) { n.acks = []; changed = true }
+    if (!Array.isArray(n.targetIds)) { n.targetIds = []; changed = true }
+  })
+  doc.payrollRuns.forEach((r: any) => { if (!Array.isArray(r.lines)) { r.lines = []; changed = true } })
 
   if (doc.version !== DB_VERSION) { doc.version = DB_VERSION; changed = true }
   return changed
