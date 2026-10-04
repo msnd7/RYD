@@ -13,6 +13,8 @@
     "dev:api": "tsx tools/dev-server.ts"
   },
   "dependencies": {
+    "html-to-image": "^1.11.13",
+    "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "pg": "^8.23.0",
     "react": "^18.3.1",

@@ -210,6 +210,85 @@ export interface TeacherAttendance {
   note?: string
 }
 
+/* ================= عقود المعلمين ================= */
+export type TeacherContractStatus = 'draft' | 'awaiting' | 'signed' | 'cancelled'
+
+/** عقد عمل للمعلم يُعدّه المفوض المالي، ويوقّعه المعلم على جهاز المفوض بعد قراءته */
+export interface TeacherContract {
+  id: ID
+  mosqueId: ID
+  teacherId: ID
+  title: string
+  startDate: string
+  endDate: string
+  salary: number
+  workDays: string       // أيام الدوام
+  workHours: string      // وقت الحلقة
+  duties: string         // المهام والواجبات
+  terms: string          // بنود إضافية
+  status: TeacherContractStatus
+  createdBy: ID
+  createdAt: string
+  /** توقيع الطرف الأول (المفوض المالي) */
+  issuerSignature?: string
+  issuerName?: string
+  /** توقيع المعلم بعد القراءة والإقرار */
+  teacherSignature?: string
+  teacherSignedName?: string
+  readAt?: string
+  signedAt?: string      // ISO كامل بالوقت
+  sentAt?: string
+}
+
+/* ================= دورات الرواتب ================= */
+export interface PayrollLine {
+  kind: 'staff' | 'teacher'
+  personId: ID
+  name: string
+  sub: string
+  mosqueId: ID
+  salary: number
+  dayValue: number
+  absent: number
+  excused: number
+  late: number
+  deductionDays: number
+  deduction: number
+  net: number
+}
+
+/**
+ * مسيّر شهر ميلادي مُعتمد: تُثبَّت فيه الأرقام عند الاعتماد،
+ * فلا تتغيّر تقارير الأشهر الماضية لو تغيّر راتب أحد لاحقًا.
+ * الرواتب تُصرف يوم ١ من الشهر التالي، ومعه يبدأ احتساب شهر جديد.
+ */
+export interface PayrollRun {
+  id: ID
+  month: string          // YYYY-MM — شهر العمل المحتسب
+  lines: PayrollLine[]
+  approvedBy: ID
+  approvedAt: string
+  paidAt?: string        // تاريخ الصرف الفعلي
+  paidBy?: ID
+  note?: string
+}
+
+/* ================= توصيات قائد اللجنة لفريقه ================= */
+export interface TeamNote {
+  id: ID
+  mosqueId: ID
+  committeeId: ID
+  kind: 'recommendation' | 'directive'   // توصية · توجيه
+  title: string
+  body: string
+  priority: 'normal' | 'high'
+  /** فارغ = لكل الفريق */
+  targetIds: ID[]
+  createdBy: ID
+  createdAt: string
+  acks: { personId: ID; at: string }[]
+}
+
 export interface Settings {
   complexName: string
   complexSubtitle: string
@@ -220,6 +299,7 @@ export interface Settings {
   defaultPassword: string       // الرمز المبدئي عند الإضافة أو إعادة التعيين
   pushEnabled: boolean          // تفعيل إشعارات التذكير على الجهاز
   lateDeductionDays: number     // خصم التأخير للمعلم (بالأيام)
+  payDay: number                // يوم صرف الرواتب من الشهر الميلادي التالي (١)
 }
 
 export interface DB {
@@ -237,4 +317,7 @@ export interface DB {
   custodies: Custody[]
   teachers: Teacher[]
   teacherAttendance: TeacherAttendance[]
+  teacherContracts: TeacherContract[]
+  payrollRuns: PayrollRun[]
+  teamNotes: TeamNote[]
 }

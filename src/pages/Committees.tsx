@@ -5,6 +5,7 @@ import { useAuth } from '../store/auth'
 import { Card, Modal, Field, Select, Badge, Empty, useToast, Progress, Menu, StatStrip } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { CustodyRequestModal } from '../components/CustodyRequestModal'
+import { TeamNoteModal } from '../components/TeamModals'
 import { committeesOf, staffOf, taskCounts, personName, custodyBalance } from '../lib/selectors'
 import { fmtDate, dueLabel, todayISO, shiftDays } from '../lib/date'
 import { money } from '../lib/format'
@@ -27,6 +28,7 @@ export default function Committees() {
   const [editing, setEditing] = useState<Committee | null>(null)
   const [taskFor, setTaskFor] = useState<Committee | null>(null)
   const [custodyFor, setCustodyFor] = useState<Committee | null>(null)
+  const [noteFor, setNoteFor] = useState<Committee | null>(null)
 
   const mosque = db.mosques.find((m) => m.id === mid)
   const list = committeesOf(db, mid)
@@ -78,6 +80,7 @@ export default function Committees() {
                     <Menu items={[
                       ...(canAct ? [
                         { label: 'إضافة مهمة للجنة', icon: '＋', onClick: () => setTaskFor(c) },
+                        { label: 'توصية أو توجيه للفريق', icon: '💡', onClick: () => setNoteFor(c) },
                         { label: 'طلب صرف عهدة', icon: '💳', onClick: () => setCustodyFor(c) },
                       ] : []),
                       ...(canManage ? [
@@ -126,6 +129,37 @@ export default function Committees() {
                   </div>
                 </div>
               </div>
+
+              {/* توصيات اللجنة */}
+              {(() => {
+                const notes = db.teamNotes.filter((n) => n.committeeId === c.id)
+                  .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+                if (!notes.length && !canAct) return null
+                return (
+                  <div className="border-t border-line px-4 sm:px-5 py-3.5">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <p className="text-[11.5px] font-bold text-ink-700">التوصيات والتوجيهات ({notes.length})</p>
+                      {canAct && <button className="btn-soft btn-sm" onClick={() => setNoteFor(c)}>＋ توصية</button>}
+                    </div>
+                    {notes.length === 0 ? (
+                      <p className="text-[11.5px] text-ink-400">لم تُنشر توصيات لهذه اللجنة بعد.</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {notes.slice(0, 2).map((n) => {
+                          const aud = n.targetIds.length ? n.targetIds.length : Math.max(0, members.filter((m) => m.id !== n.createdBy).length)
+                          return (
+                            <li key={n.id} className="flex items-center gap-2 text-[12px]">
+                              <span>{n.kind === 'directive' ? '📌' : '💡'}</span>
+                              <span className="font-bold flex-1 min-w-0 truncate">{n.title}</span>
+                              <span className="text-[10.5px] text-ink-400 shrink-0">اطّلع {n.acks.length}/{aud}</span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* عهد اللجنة */}
               <div className="border-t border-line px-4 sm:px-5 py-3.5 bg-navy-50/40">
@@ -189,6 +223,7 @@ export default function Committees() {
 
       <CommitteeModal open={open} onClose={() => { setOpen(false); setEditing(null) }} committee={editing} mosqueId={mid} />
       <QuickTaskModal committee={taskFor} onClose={() => setTaskFor(null)} />
+      {noteFor && <TeamNoteModal committees={[noteFor]} onClose={() => setNoteFor(null)} />}
       <CustodyRequestModal
         open={!!custodyFor} onClose={() => setCustodyFor(null)}
         mosqueId={custodyFor?.mosqueId ?? mid} committeeId={custodyFor?.id}

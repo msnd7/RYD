@@ -48,9 +48,8 @@
 
 @layer base {
   /* ================= النظام النهاري ================= */
-  :root {
-    /* ارتفاع الشريط العلوي — يعتمد عليه العمود الجانبي اللاصق */
-    --hdr: calc(56px + var(--safe-t, 0px));
+  /* .force-light: وثائق (عقود، مسيّرات) تبقى ورقًا أبيض حتى في النظام الليلي */
+  :root, .force-light, .paper {
     --canvas: 245 248 252;
     --surface: 255 255 255;
     --line: 227 234 242;
@@ -73,10 +72,13 @@
     --shadow-glow: 0 10px 30px -12px rgba(240,130,14,.55);
 
     --scroll-thumb: 198 212 226;
+    color-scheme: light;
+  }
+  :root {
+    /* ارتفاع الشريط العلوي */
+    --hdr: calc(64px + var(--safe-t, 0px));
     --safe-b: env(safe-area-inset-bottom, 0px);
     --safe-t: env(safe-area-inset-top, 0px);
-
-    color-scheme: light;
   }
 
   /* ================= النظام الليلي ================= */
@@ -128,7 +130,6 @@
   }
   /* منع التمدّد الأفقي من داخل المحتوى فقط — clip لا ينشئ حاوية تمرير */
   main { overflow-x: clip; }
-  @media (min-width: 640px) { :root { --hdr: calc(58px + var(--safe-t, 0px)); } }
   /* خريطة تحديد النطاق تبقى داخل ترتيب الصفحة ولا تعلو النوافذ */
   .leaflet-container { z-index: 0; font: inherit; }
   /* عناصر الشبكة والمرن لا تتمدد بسبب محتواها */
@@ -190,7 +191,7 @@
   .th { @apply text-right text-[11.5px] font-bold text-ink-500 px-4 py-3 whitespace-nowrap; }
   .td { @apply px-4 py-3 text-[13.5px] text-ink-900 align-middle; }
   .row { @apply border-t border-line/70 hover:bg-navy-50/50 transition; }
-  .tab { @apply px-3.5 h-9 inline-flex items-center rounded-lg text-[13px] font-bold text-ink-500 transition; }
+  .tab { @apply px-3.5 h-9 inline-flex items-center rounded-lg text-[13px] font-bold text-ink-500 transition whitespace-nowrap shrink-0; }
   .tab-on { @apply bg-surface text-navy-800 shadow-soft; }
   .sect-title { @apply font-display text-[15px] font-bold text-ink-900 leading-tight; }
   .muted { @apply text-[12.5px] text-ink-500 leading-6; }
@@ -221,9 +222,45 @@
   .stat-grid > :last-child:nth-child(odd) { grid-column: span 2; }
   @media (min-width: 768px) { .stat-grid > :last-child:nth-child(odd) { grid-column: auto; } }
 
-  /* مجموعة في القائمة الجانبية */
-  .nav-group { @apply px-3.5 pt-4 pb-1.5 text-[10px] font-bold text-ink-400 tracking-[.08em]; }
   .divide-line > * + * { @apply border-t border-line/70; }
+
+  /* ---------- التنقل العلوي (بلا شريط جانبي) ---------- */
+  .nav-pill {
+    @apply relative inline-flex items-center gap-2 h-10 px-3.5 rounded-full text-[13px] font-bold text-ink-500
+           transition-colors whitespace-nowrap hover:text-navy-800 hover:bg-navy-50;
+  }
+  .nav-pill-on { @apply bg-navy-700 text-white hover:bg-navy-700 hover:text-white shadow-soft; }
+  .nav-count {
+    @apply text-[10px] font-black bg-orange-500 text-white rounded-full px-1.5 min-w-[18px] h-[18px] grid place-items-center;
+  }
+  /* بلاطة في لوحة «كل الأقسام» */
+  .tile {
+    @apply relative flex items-start gap-3 rounded-2xl border border-line bg-surface p-3.5 text-right
+           transition hover:border-navy-300 hover:shadow-soft hover:-translate-y-px;
+  }
+  .tile-on { @apply border-navy-700 ring-2 ring-navy-700/15; }
+  .tile-ico { @apply w-10 h-10 rounded-xl grid place-items-center shrink-0 bg-navy-50 text-navy-700; }
+  /* الشريط السفلي العائم للجوال */
+  .dock {
+    @apply fixed inset-x-3 z-40 rounded-[22px] border border-line bg-surface/90 backdrop-blur-xl shadow-lift;
+    bottom: calc(10px + var(--safe-b));
+  }
+
+  /* بطاقة بارزة بخلفية كحلية ثابتة في النظامين (لا تنقلب ألوانها ليلًا) */
+  .hero {
+    @apply relative overflow-hidden rounded-3xl text-white shadow-lift;
+    background: linear-gradient(140deg, #1A4877 0%, #12395F 45%, #071B2F 100%);
+  }
+
+  /* ---------- ورق الوثائق: عقود ومسيّرات تبقى بيضاء ---------- */
+  .force-light, .paper { color: rgb(var(--ink-900)); }
+  .paper { @apply bg-surface rounded-2xl border border-line shadow-lift; }
+  .doc-k { @apply text-[11.5px] font-bold text-ink-500; }
+  .doc-v { @apply text-[13px] font-extrabold text-ink-900; }
+  .doc-table { @apply w-full border border-line text-[11.5px]; border-collapse: collapse; }
+  .doc-table th { @apply bg-navy-50 text-ink-700 font-bold px-2 py-2 border border-line text-right whitespace-nowrap; }
+  .doc-table td { @apply px-2 py-1.5 border border-line text-ink-900 align-middle; }
+  .doc-table tfoot td { @apply bg-navy-50 font-black; }
 }
 
 /* ===== الطباعة: منطقة التقرير فقط ===== */
@@ -242,6 +279,7 @@
   }
   .no-print { display: none !important; }
   .card, .panel { box-shadow: none !important; border: 1px solid #D8E2EC !important; }
+  #print-area.paper { border: 0 !important; border-radius: 0 !important; }
 }
 
 /* ===== حركات ===== */

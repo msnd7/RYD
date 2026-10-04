@@ -144,6 +144,8 @@ function Shell() {
         <Route path="committee" element={<Navigate to="/my" replace />} />
         <Route path="announcements" element={<Announcements scope="mine" />} />
         <Route path="report" element={<Reports scope="mine" />} />
+        {/* المفوض المالي من فريق المسجد */}
+        <Route path="finance" element={<Finance />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

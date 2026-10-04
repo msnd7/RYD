@@ -5,12 +5,13 @@ import { useAuth } from '../store/auth'
 import { Card, Badge, Empty, Progress, Stat } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { CustodyRequestModal } from '../components/CustodyRequestModal'
+import { LeaderTaskModal, TeamNoteModal, TeamNotesList } from '../components/TeamModals'
 import { Donut, C } from '../components/charts'
 import { custodyBalance, taskCounts, personName, mosqueName, attendanceStats } from '../lib/selectors'
 import { fmtDate, fmtDayName, todayISO, shiftDays, daysBetween, dueLabel } from '../lib/date'
 import { money } from '../lib/format'
 import { STATUS_LABEL } from './Tasks'
-import type { Task } from '../types'
+import type { Task, TeamNote } from '../types'
 
 const CST: Record<string, { label: string; tone: string }> = {
   requested: { label: 'بانتظار اعتماد المدير', tone: 'warn' },
@@ -36,6 +37,8 @@ export default function CommitteeDashboard() {
   const { db } = useDb()
   const { user } = useAuth()
   const [custodyFor, setCustodyFor] = useState<string | null>(null)
+  const [taskFor, setTaskFor] = useState<{ committeeId?: string; assignee?: string } | null>(null)
+  const [noteFor, setNoteFor] = useState<{ note?: TeamNote } | null>(null)
   const today = todayISO()
   const from = shiftDays(today, -29)
 
@@ -67,6 +70,21 @@ export default function CommitteeDashboard() {
       </div>
     )
   }
+
+  // اللجان التي يقودها المستخدم: له إسناد المهام ونشر التوصيات لفريقه
+  const led = committees.filter((c) => c.leaderId === user.id)
+  const isLeader = led.length > 0
+  const notes = db.teamNotes
+    .filter((n) => user.committeeIds.includes(n.committeeId) &&
+      (n.targetIds.length === 0 || n.targetIds.includes(user.id) || n.createdBy === user.id ||
+        led.some((c) => c.id === n.committeeId)))
+    .sort((a, b) => {
+      const unread = (n: TeamNote) => (n.createdBy !== user.id && !n.acks.some((x) => x.personId === user.id) ? 0 : 1)
+      return (a.priority === 'high' ? 0 : 1) - (b.priority === 'high' ? 0 : 1) ||
+        unread(a) - unread(b) || b.createdAt.localeCompare(a.createdAt)
+    })
+  const unreadNotes = notes.filter((n) => n.createdBy !== user.id &&
+    (n.targetIds.length === 0 || n.targetIds.includes(user.id)) && !n.acks.some((x) => x.personId === user.id)).length
 
   const tc = taskCounts(tasks)
   const pct = tc.total ? Math.round((tc.done / tc.total) * 100) : 0
@@ -114,13 +132,52 @@ export default function CommitteeDashboard() {
       <PageHeader
         eyebrow={mosqueName(db, user.mosqueId)}
         title={committees.length === 1 ? committees[0].name : 'لوحة لجاني'}
-        description="كل ما يخص لجنتك في شاشة واحدة: حالة المهام، وحضور الأعضاء، والعهد غير المقفلة."
-        actions={
-          <button className="btn-accent btn-sm" onClick={() => setCustodyFor(committees[0].id)}>
+        description={isLeader
+          ? 'أنت قائد اللجنة: أسند المهام لفريقك، وانشر التوصيات والتوجيهات وتابع من اطّلع عليها، وراقب الحضور والعهد.'
+          : 'كل ما يخص لجنتك في شاشة واحدة: حالة المهام، وتوصيات القائد، وحضور الأعضاء، والعهد غير المقفلة.'}
+        actions={<>
+          <button className={`${isLeader ? 'btn-ghost' : 'btn-accent'} btn-sm`} onClick={() => setCustodyFor(committees[0].id)}>
             طلب صرف عهدة
           </button>
-        }
+        </>}
       />
+
+      {/* لوحة قائد اللجنة */}
+      {isLeader && (
+        <section className="hero p-4 sm:p-5">
+          <div aria-hidden className="absolute -left-12 -bottom-16 w-56 h-56 rounded-full bg-orange-500/25 blur-3xl" />
+          <div className="relative flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold text-white/60">★ لوحة القائد</p>
+              <h2 className="font-display text-[19px] font-bold text-white mt-0.5">فريق {led.map((c) => c.name).join(' · ')}</h2>
+            </div>
+            <div className="flex gap-2">
+              <button className="rounded-xl bg-white font-bold text-[12.5px] px-3.5 h-10 hover:bg-white/90 transition" style={{ color: '#12395F' }} onClick={() => setTaskFor({})}>＋ إسناد مهمة</button>
+              <button className="rounded-xl bg-orange-500 text-white font-bold text-[12.5px] px-3.5 h-10 hover:bg-orange-600 transition" onClick={() => setNoteFor({})}>＋ توصية أو توجيه</button>
+            </div>
+          </div>
+          <ul className="relative grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-4">
+            {members.filter((m) => led.some((c) => m.committeeIds.includes(c.id))).map((m) => {
+              const open = tasks.filter((t) => t.assigneeId === m.id && t.status !== 'done')
+              const late = open.filter((t) => t.dueDate < today).length
+              const st = attendanceStats(db, m.id, from, today)
+              return (
+                <li key={m.id} className="rounded-2xl bg-white/[.07] border border-white/10 p-3 flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-full bg-white/15 grid place-items-center font-bold shrink-0">{m.name.trim()[0]}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-[13px] truncate">{m.name}{m.id === user.id ? ' (أنت)' : ''}</p>
+                    <p className="text-[11px] text-white/60 truncate">
+                      {open.length} مفتوحة{late ? ` · ${late} متأخرة` : ''} · حضور {st.total ? `${st.rate}%` : '—'}
+                    </p>
+                  </div>
+                  <button title={`إسناد مهمة إلى ${m.name}`} onClick={() => setTaskFor({ assignee: m.id, committeeId: led.find((c) => m.committeeIds.includes(c.id))?.id })}
+                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-orange-500 grid place-items-center transition shrink-0">＋</button>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       {/* حالة المهام */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
@@ -132,6 +189,21 @@ export default function CommitteeDashboard() {
           </Link>
         ))}
       </div>
+
+      {/* التوصيات والتوجيهات */}
+      {(notes.length > 0 || isLeader) && (
+        <Card title="توصيات وتوجيهات اللجنة"
+          subtitle={isLeader ? 'تابع من اطّلع من فريقك على كل توصية' : unreadNotes ? `${unreadNotes} بانتظار اطّلاعك` : 'من قائد لجنتك'}
+          action={isLeader && <button className="btn-soft btn-sm" onClick={() => setNoteFor({})}>＋ توصية</button>}
+          pad={false}>
+          {notes.length === 0 ? (
+            <Empty icon="💡" title="لا توجد توصيات بعد" hint="انشر توصية أو توجيهًا لفريقك، وتابع من اطّلع عليه." />
+          ) : (
+            <TeamNotesList notes={notes.slice(0, 8)} canManage={(n) => n.createdBy === user.id || led.some((c) => c.id === n.committeeId)}
+              onEdit={(n) => setNoteFor({ note: n })} />
+          )}
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-5">
         {/* إنجاز اللجنة + المهام القادمة */}
@@ -306,6 +378,12 @@ export default function CommitteeDashboard() {
           </div>
         </Card>
       ))}
+
+      {taskFor && (
+        <LeaderTaskModal committees={led} initialCommitteeId={taskFor.committeeId}
+          initialAssignee={taskFor.assignee} onClose={() => setTaskFor(null)} />
+      )}
+      {noteFor && <TeamNoteModal committees={led.length ? led : committees} note={noteFor.note} onClose={() => setNoteFor(null)} />}
 
       <CustodyRequestModal
         open={!!custodyFor} onClose={() => setCustodyFor(null)}

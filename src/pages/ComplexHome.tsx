@@ -27,15 +27,27 @@ export default function ComplexHome() {
 
   return (
     <div className="space-y-5">
-      {/* ترويسة هادئة يظهر فيها الشعار على طبيعته */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-4 pb-5 border-b border-line">
-        <LogoMark h={64} />
-        <div className="min-w-0 flex-1">
-          <p className="eyebrow">{fmtDayName(today)} · {fmtDate(today)} · {fmtHijri(today)}</p>
-          <h1 className="text-navy-900 mt-1">حيّاك الله، {user?.name?.split(' ').slice(0, 2).join(' ')}</h1>
-          <p className="muted mt-1">{db.settings.complexSubtitle}</p>
+      {/* ترحيب */}
+      <section className="hero p-5 sm:p-7">
+        <div aria-hidden className="absolute -left-16 -top-24 w-72 h-72 rounded-full bg-orange-500/25 blur-3xl" />
+        <div aria-hidden className="absolute left-1/3 -bottom-28 w-72 h-72 rounded-full bg-sky-400/10 blur-3xl" />
+        <div className="relative flex flex-wrap items-center gap-x-5 gap-y-4">
+          <span className="w-[76px] h-[76px] rounded-[22px] bg-white grid place-items-center shadow-lift shrink-0">
+            <LogoMark h={58} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11.5px] font-bold text-white/60">{fmtDayName(today)} · {fmtDate(today)} · {fmtHijri(today)}</p>
+            <h1 className="!text-white mt-1 !text-[24px] sm:!text-[30px]">حيّاك الله، {user?.name?.split(' ').slice(0, 2).join(' ')}</h1>
+            <p className="text-[12.5px] text-white/70 mt-1">{db.settings.complexSubtitle}</p>
+          </div>
+          {isDirector && (
+            <div className="flex flex-wrap gap-2">
+              <Link to="/complex/finance" className="rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 px-3.5 h-10 inline-flex items-center text-[12.5px] font-bold transition">💰 الرواتب</Link>
+              <Link to="/complex/announcements" className="rounded-xl bg-orange-500 hover:bg-orange-600 px-3.5 h-10 inline-flex items-center text-[12.5px] font-bold transition">＋ إعلان</Link>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
 
       <StatStrip items={[
         { label: 'المساجد', value: db.mosques.length },

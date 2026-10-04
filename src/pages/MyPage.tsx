@@ -33,7 +33,7 @@ export default function MyPage() {
     <div className="min-h-screen">
       <TopBar title="صفحتي" subtitle={`${user.jobTitle} · ${mosqueName(db, user.mosqueId)}`} back="/" />
       <div className="max-w-[1180px] mx-auto p-4 sm:p-6 space-y-5 fade-in">
-        <div className="rounded-3xl bg-gradient-to-bl from-navy-700 to-navy-900 text-white p-6 flex flex-wrap items-center gap-5">
+        <div className="hero p-6 flex flex-wrap items-center gap-5">
           <span className="w-16 h-16 rounded-2xl bg-surface/15 grid place-items-center text-2xl font-display font-black">
             {user.name[0]}
           </span>

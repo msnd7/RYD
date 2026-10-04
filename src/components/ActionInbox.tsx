@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom'
 import { useDb } from '../store/db'
 import { useAuth } from '../store/auth'
 import { todayISO } from '../lib/date'
-import { personName, mosqueName } from '../lib/selectors'
+import { personName, mosqueName, teacherName } from '../lib/selectors'
+import { cycleInfo, monthStatus } from '../lib/payroll'
+import { monthLabel } from '../lib/date'
 import { Card, Empty } from './ui'
 
 type Item = { id: string; icon: string; tone: string; text: string; sub: string; to: string; cta: string }
@@ -50,6 +52,28 @@ export function ActionInbox({ mosqueId }: { mosqueId?: string }) {
         text: `عهدة تجاوزت تاريخ الإقفال`,
         sub: `${personName(db, c.requesterId)} · ${c.purpose}`,
         to: `/m/${c.mosqueId}/finance`, cta: 'متابعة الإقفال',
+      })
+    })
+  }
+
+  // ٢٫٥) الرواتب: مسيّر الشهر الماضي حان صرفه، وعقود معلمين بانتظار التوقيع
+  if (isDirector || user.financeAccess) {
+    const fin = mosqueId ? `/m/${mosqueId}/finance` : isDirector ? '/complex/finance'
+      : user.role === 'member' ? '/my/finance' : `/m/${user.mosqueId}/finance`
+    const prev = cycleInfo(db).previous
+    const st = monthStatus(db, prev)
+    if (st === 'due' || st === 'approved') {
+      items.push({
+        id: `pr-${prev}`, icon: '💰', tone: 'bg-orange-100 text-orange-700',
+        text: st === 'due' ? `مسيّر رواتب ${monthLabel(prev)} بانتظار الاعتماد` : `رواتب ${monthLabel(prev)} معتمدة بانتظار الصرف`,
+        sub: 'الرواتب تُصرف يوم ١ من كل شهر ميلادي', to: fin, cta: st === 'due' ? 'اعتماد المسيّر' : 'تأكيد الصرف',
+      })
+    }
+    inScope(db.teacherContracts.filter((c) => c.status === 'awaiting' || c.status === 'draft')).slice(0, 4).forEach((c) => {
+      items.push({
+        id: `tc-${c.id}`, icon: '📜', tone: 'bg-navy-100 text-navy-800',
+        text: `عقد ${teacherName(db, c.teacherId)} ${c.status === 'draft' ? 'مسودة بانتظار توقيعك' : 'بانتظار توقيع المعلم'}`,
+        sub: mosqueName(db, c.mosqueId), to: fin, cta: 'فتح العقود',
       })
     })
   }
