@@ -13,7 +13,7 @@ export function Card({ title, subtitle, action, children, className = '', pad = 
   return (
     <section className={`card ${className}`}>
       {(title || action) && (
-        <header className="flex flex-wrap items-start justify-between gap-3 px-4 sm:px-5 pt-4 pb-3 border-b border-line">
+        <header className="flex flex-wrap items-start justify-between gap-3 px-4 sm:px-5 pt-4 pb-3.5 border-b border-line/70">
           <div>
             {title && <h3 className="sect-title">{title}</h3>}
             {subtitle && <p className="muted mt-0.5">{subtitle}</p>}
@@ -129,16 +129,14 @@ export function StatStrip({ items, className = '' }: {
   className?: string
 }) {
   return (
-    <div className={`card overflow-hidden ${className}`}>
-      <div className={`stat-grid grid gap-px bg-line ${COLS[Math.min(items.length, 6)] ?? COLS[4]}`}>
-        {items.map((it, i) => (
-          <div key={i} className={`stat-cell ${it.accent ? 'bg-orange-50' : 'bg-surface'}`}>
-            <div className="stat-k">{it.label}</div>
-            <div className={`stat-v ${it.accent ? 'text-orange-700' : ''}`}>{it.value}</div>
-            {it.hint && <div className="stat-h">{it.hint}</div>}
-          </div>
-        ))}
-      </div>
+    <div className={`stat-grid grid gap-2.5 sm:gap-3 ${COLS[Math.min(items.length, 6)] ?? COLS[4]} ${className}`}>
+      {items.map((it, i) => (
+        <div key={i} className={`kpi ${it.accent ? 'kpi-accent' : ''}`}>
+          <div className="stat-k">{it.label}</div>
+          <div className={`stat-v ${it.accent ? 'text-orange-700' : ''}`}>{it.value}</div>
+          {it.hint && <div className="stat-h">{it.hint}</div>}
+        </div>
+      ))}
     </div>
   )
 }

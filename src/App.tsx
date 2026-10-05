@@ -25,6 +25,9 @@ import Announcements from './pages/Announcements'
 import Finance from './pages/Finance'
 import MyPage from './pages/MyPage'
 import CommitteeDashboard from './pages/CommitteeDashboard'
+import Excellence from './pages/Excellence'
+import Insights from './pages/Insights'
+import Showcase from './pages/Showcase'
 
 function Booting() {
   return (
@@ -105,6 +108,8 @@ function Shell() {
       <Route path="/login" element={<LoginGate />} />
       <Route path="/change-password" element={<RequireSession><ChangePassword /></RequireSession>} />
       <Route path="/me" element={<Guard><MyPage /></Guard>} />
+      {/* شاشة العرض بملء الشاشة — بلا ترويسة ولا تنقل */}
+      <Route path="/show" element={<Guard><Showcase /></Guard>} />
 
       {/* ===== واجهة المجمع — لمدير المجمع ===== */}
       <Route path="/" element={<Guard><ComplexLayout /></Guard>}>
@@ -113,6 +118,8 @@ function Shell() {
         <Route path="complex/tasks" element={<DirectorOnly><Tasks scope="complex" /></DirectorOnly>} />
         <Route path="complex/attendance" element={<DirectorOnly><Attendance scope="complex" /></DirectorOnly>} />
         <Route path="complex/staff" element={<DirectorOnly><Staff scope="complex" /></DirectorOnly>} />
+        <Route path="complex/excellence" element={<DirectorOnly><Excellence scope="complex" /></DirectorOnly>} />
+        <Route path="complex/insights" element={<DirectorOnly><Insights scope="complex" /></DirectorOnly>} />
         <Route path="complex/meetings" element={<DirectorOnly><Meetings scope="complex" /></DirectorOnly>} />
         <Route path="complex/reports" element={<DirectorOnly><Reports scope="complex" /></DirectorOnly>} />
         <Route path="complex/announcements" element={<DirectorOnly><Announcements scope="complex" /></DirectorOnly>} />
@@ -129,6 +136,8 @@ function Shell() {
         <Route path="committees" element={<Committees />} />
         <Route path="teachers" element={<Teachers />} />
         <Route path="meetings" element={<Meetings />} />
+        <Route path="excellence" element={<Excellence />} />
+        <Route path="insights" element={<Insights />} />
         <Route path="reports" element={<Reports />} />
         <Route path="announcements" element={<Announcements />} />
         <Route path="finance" element={<Finance />} />
@@ -144,6 +153,7 @@ function Shell() {
         <Route path="committee" element={<Navigate to="/my" replace />} />
         <Route path="announcements" element={<Announcements scope="mine" />} />
         <Route path="report" element={<Reports scope="mine" />} />
+        <Route path="excellence" element={<Excellence scope="mine" />} />
         {/* المفوض المالي من فريق المسجد */}
         <Route path="finance" element={<Finance />} />
       </Route>

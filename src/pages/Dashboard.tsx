@@ -4,6 +4,7 @@ import { useAuth } from '../store/auth'
 import { Card, Progress, Badge, Empty, StatStrip } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { ActionInbox } from '../components/ActionInbox'
+import { HonorsTeaser } from '../components/honors'
 import { BarChart, Donut, SplitBar, C } from '../components/charts'
 import { todayISO, shiftDays, fmtDate, dueLabel } from '../lib/date'
 import {
@@ -62,6 +63,8 @@ export default function Dashboard() {
         { label: 'مهام مفتوحة', value: tc.total - tc.done, hint: tc.late ? `${tc.late} متأخرة` : 'لا توجد متأخرات' },
         { label: 'مهام متعثرة', value: tc.stuck, hint: 'تحتاج تدخّلًا', accent: tc.stuck > 0 },
       ]} />
+
+      <HonorsTeaser mosqueId={mid} to={`/m/${mid}/excellence`} />
 
       <div className="grid lg:grid-cols-3 gap-5">
         <Card title="حركة الحضور — آخر ١٤ يومًا" className="lg:col-span-2"

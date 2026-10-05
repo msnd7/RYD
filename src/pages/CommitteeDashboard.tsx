@@ -5,6 +5,7 @@ import { useAuth } from '../store/auth'
 import { Card, Badge, Empty, Progress, Stat } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { CustodyRequestModal } from '../components/CustodyRequestModal'
+import { HonorsTeaser } from '../components/honors'
 import { LeaderTaskModal, TeamNoteModal, TeamNotesList } from '../components/TeamModals'
 import { Donut, C } from '../components/charts'
 import { custodyBalance, taskCounts, personName, mosqueName, attendanceStats } from '../lib/selectors'
@@ -263,6 +264,8 @@ export default function CommitteeDashboard() {
           </div>
         </Card>
       </div>
+
+      {user.mosqueId !== 'complex' && <HonorsTeaser mosqueId={user.mosqueId as string} to="/my/excellence" />}
 
       {/* حضور كل عضو */}
       <Card title="حضور أعضاء اللجنة" subtitle={`${members.length} عضوًا · آخر ٣٠ يومًا`} pad={false}>
