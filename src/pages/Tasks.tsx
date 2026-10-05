@@ -2,53 +2,61 @@ import { useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useDb, uid } from '../store/db'
 import { useAuth } from '../store/auth'
-import { Card, Modal, Field, Select, Badge, Empty, useToast, Menu } from '../components/ui'
+import { Select, Empty, useToast } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
-import { AiTextArea } from '../components/AiTextArea'
-import { todayISO, fmtDate, dueLabel, shiftDays } from '../lib/date'
-import { committeesOf, staffOf, personName, committeeName, taskCounts, mosqueName } from '../lib/selectors'
-import { waLink, taskReminder, hasWhatsapp } from '../lib/whatsapp'
-import type { Task, TaskKind, TaskStatus } from '../types'
+import { todayISO, fmtDate, fmtDayName, fmtHijri, shiftDays, daysBetween } from '../lib/date'
+import { committeesOf, staffOf, mosqueName } from '../lib/selectors'
+import {
+  QUADRANTS, QUADRANT_ORDER, STATUS_LABEL, GROUP_META, groupByTime, isPinnedOn, sortTasks, type GroupKey,
+} from '../lib/tasks'
+import type { Task, TaskPriority, TaskStatus } from '../types'
+import { TaskRow, PinIcon, type TaskActions } from '../components/tasks/TaskRow'
+import { MatrixView } from '../components/tasks/MatrixView'
+import { CalendarView } from '../components/tasks/CalendarView'
+import { TaskModal, type TaskDraft, type TaskScope } from '../components/tasks/TaskModal'
 
-export const KIND_LABEL: Record<TaskKind, string> = { task: 'مهمة', decision: 'قرار', recommendation: 'توصية' }
-export const KIND_TONE: Record<TaskKind, string> = { task: 'info', decision: 'purple', recommendation: 'warn' }
-export const STATUS_LABEL: Record<TaskStatus, string> = {
-  pending: 'قيد التنفيذ', done: 'منجزة', stuck: 'متعثرة', postponed: 'مؤجلة',
+// تبقى متاحة لبقية الصفحات التي تستوردها من هنا
+export { KIND_LABEL, KIND_TONE, STATUS_LABEL, STATUS_TONE } from '../lib/tasks'
+
+type View = 'list' | 'matrix' | 'calendar'
+type StatusFilter = 'all' | TaskStatus | 'late'
+
+const VIEWS: { key: View; label: string; icon: JSX.Element }[] = [
+  { key: 'list', label: 'القائمة', icon: <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 6h11M9 12h11M9 18h11" /><circle cx="4.5" cy="6" r="1" /><circle cx="4.5" cy="12" r="1" /><circle cx="4.5" cy="18" r="1" /></svg> },
+  { key: 'matrix', label: 'المصفوفة', icon: <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="8" height="8" rx="2" /><rect x="13" y="3" width="8" height="8" rx="2" /><rect x="3" y="13" width="8" height="8" rx="2" /><rect x="13" y="13" width="8" height="8" rx="2" /></svg> },
+  { key: 'calendar', label: 'التقويم', icon: <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg> },
+]
+
+const VIEW_KEY = 'ryd.tasks.view'
+const readView = (): View => {
+  try { const v = localStorage.getItem(VIEW_KEY); return v === 'matrix' || v === 'calendar' ? v : 'list' } catch { return 'list' }
 }
-export const STATUS_TONE: Record<TaskStatus, string> = {
-  pending: 'info', done: 'ok', stuck: 'bad', postponed: 'warn',
-}
 
-/** ألوان الحالة: شريط جانبي + خلفية هادئة + لون العنوان */
-const STATUS_STYLE: Record<TaskStatus, { bar: string; tint: string; title: string; pill: string }> = {
-  done:      { bar: 'bg-navy-600',   tint: 'bg-navy-50/60',   title: 'text-ink-400 line-through', pill: 'bg-navy-600 text-white' },
-  pending:   { bar: 'bg-navy-300',   tint: '',                title: 'text-ink-900',              pill: 'bg-navy-50 text-navy-800' },
-  postponed: { bar: 'bg-orange-300', tint: 'bg-orange-50/50', title: 'text-orange-800',           pill: 'bg-orange-100 text-orange-700' },
-  stuck:     { bar: 'bg-orange-500', tint: 'bg-orange-50/70', title: 'text-orange-700',           pill: 'bg-orange-500 text-white' },
-}
-
-type Scope = 'complex' | 'mosque' | 'mine'
-
-export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
+export default function Tasks({ scope = 'mosque' }: { scope?: TaskScope }) {
   const { mid = '' } = useParams()
   const { db, set } = useDb()
   const { user, isDirector } = useAuth()
   const toast = useToast()
+  const today = todayISO()
 
   // يصل المستخدم من بطاقات لوحة اللجنة برابط مثل /my/tasks?f=stuck
   const [params] = useSearchParams()
   const initial = params.get('f')
-  const [filter, setFilter] = useState<'all' | TaskStatus | 'late'>(
-    (['pending', 'done', 'stuck', 'postponed', 'late'] as const).includes(initial as any)
-      ? (initial as any) : 'all')
+  const [status, setStatusFilter] = useState<StatusFilter>(
+    (['pending', 'done', 'stuck', 'postponed', 'late'] as const).includes(initial as any) ? (initial as any) : 'all')
+  const [view, setViewState] = useState<View>(() => {
+    const v = params.get('v'); return v === 'matrix' || v === 'calendar' || v === 'list' ? v : readView()
+  })
+  const setView = (v: View) => { setViewState(v); try { localStorage.setItem(VIEW_KEY, v) } catch { /* تخزين غير متاح */ } }
+
+  const [quad, setQuad] = useState<TaskPriority | 'none' | ''>('')
   const [fCommittee, setFCommittee] = useState('')
   const [fPerson, setFPerson] = useState('')
   const [fMosque, setFMosque] = useState('')
   const [q, setQ] = useState('')
   const [editing, setEditing] = useState<Task | null>(null)
+  const [draft, setDraft] = useState<TaskDraft | undefined>()
   const [open, setOpen] = useState(false)
-
-  const today = todayISO()
 
   /** نطاق المهام المرئية لهذا المستخدم */
   const base = useMemo(() => {
@@ -59,327 +67,380 @@ export default function Tasks({ scope = 'mosque' }: { scope?: Scope }) {
     return db.tasks.filter((t) => t.mosqueId === mid)
   }, [db.tasks, scope, mid, user])
 
-  const tc = taskCounts(base)
-
-  const list = useMemo(() => {
+  /** المرشّحات المشتركة بين العروض الثلاثة (عدا مرشّح المربع) */
+  const scoped = useMemo(() => {
     let rows = base
     if (fMosque) rows = rows.filter((t) => t.mosqueId === fMosque)
-    if (filter === 'late') rows = rows.filter((t) => t.status !== 'done' && t.dueDate < today)
-    else if (filter !== 'all') rows = rows.filter((t) => t.status === filter)
+    if (status === 'late') rows = rows.filter((t) => t.status !== 'done' && t.dueDate < today)
+    else if (status !== 'all') rows = rows.filter((t) => t.status === status)
     if (fCommittee) rows = rows.filter((t) => t.committeeId === fCommittee)
     if (fPerson) rows = rows.filter((t) => t.assigneeId === fPerson)
     if (q.trim()) rows = rows.filter((t) => (t.title + t.details).includes(q.trim()))
-    return [...rows].sort((a, b) => {
-      const w = (t: Task) => (t.status === 'done' ? 1 : 0)
-      return w(a) - w(b) || a.dueDate.localeCompare(b.dueDate)
-    })
-  }, [base, filter, fCommittee, fPerson, fMosque, q, today])
+    return rows
+  }, [base, status, fCommittee, fPerson, fMosque, q, today])
 
-  const setStatus = (id: string, status: TaskStatus) => {
-    set((d) => {
-      const t = d.tasks.find((x) => x.id === id)
-      if (t) { t.status = status; t.doneAt = status === 'done' ? todayISO() : undefined }
-    })
-    toast(`الحالة الآن: ${STATUS_LABEL[status]}`)
-  }
+  const list = useMemo(() => {
+    if (!quad) return scoped
+    return scoped.filter((t) => (quad === 'none' ? !t.priority : t.priority === quad))
+  }, [scoped, quad])
 
-  const remove = (id: string) => {
-    if (!confirm('حذف هذه المهمة نهائيًا؟')) return
-    set((d) => { d.tasks = d.tasks.filter((t) => t.id !== id) })
-    toast('تم الحذف')
-  }
-
+  /* ---------- الإجراءات ---------- */
   const canEdit = (t: Task) =>
     isDirector || user?.role === 'supervisor' || t.assigneeId === user?.id || t.createdBy === user?.id
 
-  const CARDS: { key: typeof filter; label: string; count: number; cls: string }[] = [
-    { key: 'all', label: 'الكل', count: tc.total, cls: 'bg-surface border-line text-ink-900' },
-    { key: 'pending', label: 'قيد التنفيذ', count: tc.pending, cls: 'bg-navy-50 border-navy-100 text-navy-800' },
-    { key: 'done', label: 'منجزة', count: tc.done, cls: 'bg-navy-100 border-navy-200 text-navy-800' },
-    { key: 'stuck', label: 'متعثرة', count: tc.stuck, cls: 'bg-orange-100 border-orange-200 text-orange-700' },
-    { key: 'postponed', label: 'مؤجلة', count: tc.postponed, cls: 'bg-orange-50 border-orange-200 text-orange-800' },
-    { key: 'late', label: 'متأخرة', count: tc.late, cls: 'bg-orange-50 border-orange-200 text-orange-800' },
-  ]
+  const actions: TaskActions = {
+    canEdit,
+    canDelete: (t) => isDirector || t.createdBy === user?.id,
+    setStatus: (id, s) => {
+      set((d) => {
+        const t = d.tasks.find((x) => x.id === id)
+        if (t) { t.status = s; t.doneAt = s === 'done' ? todayISO() : undefined }
+      })
+      toast(s === 'done' ? 'أحسنت! أُنجزت المهمة ✓' : `الحالة الآن: ${STATUS_LABEL[s]}`)
+    },
+    setPriority: (id, p) => {
+      set((d) => {
+        const t = d.tasks.find((x) => x.id === id)
+        if (!t) return
+        if (p) t.priority = p; else delete t.priority
+      })
+      toast(p ? `صُنّفت: ${QUADRANTS[p].label}` : 'أُلغي التصنيف')
+    },
+    togglePin: (t) => {
+      if (t.pinFrom && t.pinTo) {
+        set((d) => { const x = d.tasks.find((y) => y.id === t.id); if (x) { delete x.pinFrom; delete x.pinTo } })
+        toast('أُلغي التثبيت')
+      } else openModal(t, { pin: true })
+    },
+    edit: (t) => openModal(t),
+    remove: (id) => {
+      if (!confirm('حذف هذه المهمة نهائيًا؟')) return
+      set((d) => { d.tasks = d.tasks.filter((t) => t.id !== id) })
+      toast('تم الحذف')
+    },
+  }
+
+  function openModal(t: Task | null, d?: TaskDraft) { setEditing(t); setDraft(d); setOpen(true) }
+
+  const defaultMosque = scope === 'mosque' ? mid : (user!.mosqueId === 'complex' ? db.mosques[0]?.id : user!.mosqueId as string)
+  const canAssignOthers = isDirector || user?.role === 'supervisor'
+
+  /** الإضافة السريعة: تُسند للمستخدم نفسه مباشرة، ومن يُسند لغيره يكمل في النموذج */
+  const quickAdd = (title: string, priority: TaskPriority | undefined, dueDate: string) => {
+    const mosqueId = defaultMosque
+    const committeeId = user!.committeeIds[0] ?? committeesOf(db, mosqueId)[0]?.id
+    if (canAssignOthers || !committeeId) { openModal(null, { title, priority, dueDate }); return }
+    set((d) => {
+      d.tasks.push({
+        id: uid('t'), mosqueId, committeeId, assigneeId: user!.id,
+        title, details: '', kind: 'task', status: 'pending', dueDate, remindBefore: 2,
+        createdBy: user!.id, createdAt: todayISO(), ...(priority ? { priority } : {}),
+      })
+    })
+    toast('أُضيفت المهمة')
+  }
 
   return (
     <div className="space-y-4">
       <PageHeader
         eyebrow={scope === 'complex' ? 'الإدارة العامة' : scope === 'mine' ? 'مساحتي' : mosqueName(db, mid)}
         title="قائمة المهام"
-        description={scope === 'mine'
-          ? 'مهامك وقرارات لجنتك. غيّر الحالة بضغطة، وأضف مهامك الخاصة، وذكّر زميلك عبر واتساب.'
-          : 'أضف مهمة وحدّد المسؤول والموعد. تظهر حالة كل مهمة بلونها، ويمكن تذكير المسؤول عبر واتساب بضغطة.'}
-        actions={<button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ مهمة جديدة</button>}
+        description="كل مهمة لها لون أولويتها من مصفوفة أيزنهاور: ابدأ بالأحمر، وخطّط للأخضر، وفوّض البنفسجي، وأجّل الرمادي."
+        actions={<button className="btn-primary btn-sm" onClick={() => openModal(null)}>＋ مهمة جديدة</button>}
       />
 
-      {/* لوحة المهام — بطاقات تعمل كمرشّحات */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-        {CARDS.map((c) => (
-          <button key={c.key} onClick={() => setFilter(c.key)}
-            className={`rounded-xl border px-3 py-3 text-right transition
-              ${c.cls} ${filter === c.key ? 'ring-2 ring-orange-400 ring-offset-1 ring-offset-canvas' : 'hover:brightness-[.98]'}`}>
-            <div className="num text-[22px] leading-none">{c.count}</div>
-            <div className="text-[11px] font-bold mt-1.5 opacity-80 truncate">{c.label}</div>
-          </button>
-        ))}
+      <FocusPanel tasks={base} a={actions} today={today} quad={quad} setQuad={setQuad} />
+
+      {/* شريط الأدوات: العرض + البحث + المرشّحات */}
+      <div className="flex flex-wrap items-center gap-2.5 no-print">
+        <div className="seg" role="tablist" aria-label="طريقة العرض">
+          {VIEWS.map((v) => (
+            <button key={v.key} role="tab" aria-selected={view === v.key} onClick={() => setView(v.key)}
+              className={`seg-btn inline-flex items-center gap-1.5 !h-9 !px-3.5 ${view === v.key ? 'seg-on' : ''}`}>
+              {v.icon}{v.label}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1 min-w-[180px]">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 absolute top-1/2 -translate-y-1/2 right-3 text-ink-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+          <input className="field !h-10 pr-9" placeholder="بحث في المهام…" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        <Select className="!h-10 !w-auto min-w-[130px]" value={status === 'all' ? '' : status} onChange={(v) => setStatusFilter((v || 'all') as StatusFilter)}
+          placeholder="كل الحالات"
+          options={[...Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })), { value: 'late', label: 'متأخرة' }]} />
+        {scope === 'complex' && (
+          <Select className="!h-10 !w-auto min-w-[140px]" value={fMosque} onChange={setFMosque} placeholder="كل المساجد"
+            options={db.mosques.map((m) => ({ value: m.id, label: m.name }))} />
+        )}
+        {scope !== 'mine' && (
+          <>
+            <Select className="!h-10 !w-auto min-w-[140px]" value={fCommittee} onChange={setFCommittee} placeholder="كل اللجان"
+              options={(scope === 'complex' ? db.committees : committeesOf(db, mid)).map((c) => ({
+                value: c.id, label: scope === 'complex' ? `${c.name} — ${mosqueName(db, c.mosqueId)}` : c.name,
+              }))} />
+            <Select className="!h-10 !w-auto min-w-[140px]" value={fPerson} onChange={setFPerson} placeholder="كل الموظفين"
+              options={(scope === 'complex' ? db.people.filter((p) => p.active) : staffOf(db, mid))
+                .map((p) => ({ value: p.id, label: p.name }))} />
+          </>
+        )}
       </div>
 
-      <Card pad={false}>
-        <div className="px-4 sm:px-5 py-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 no-print">
-          <input className="field" placeholder="بحث في المهام…" value={q} onChange={(e) => setQ(e.target.value)} />
-          {scope === 'complex' && (
-            <Select value={fMosque} onChange={setFMosque} placeholder="كل المساجد"
-              options={db.mosques.map((m) => ({ value: m.id, label: m.name }))} />
+      {(quad || status !== 'all') && (
+        <div className="flex flex-wrap items-center gap-2 text-[12px] font-bold text-ink-500 -mt-1">
+          <span>تعرض الآن:</span>
+          {quad && (
+            <button onClick={() => setQuad('')} className={`chip ${quad === 'none' ? 'bg-navy-50 text-ink-700' : `${QUADRANTS[quad].soft} ${QUADRANTS[quad].ink}`}`}>
+              {quad === 'none' ? 'غير مصنّفة' : QUADRANTS[quad].label} ✕
+            </button>
           )}
-          {scope !== 'mine' && (
-            <>
-              <Select value={fCommittee} onChange={setFCommittee} placeholder="كل اللجان"
-                options={(scope === 'complex' ? db.committees : committeesOf(db, mid)).map((c) => ({
-                  value: c.id, label: scope === 'complex' ? `${c.name} — ${mosqueName(db, c.mosqueId)}` : c.name,
-                }))} />
-              <Select value={fPerson} onChange={setFPerson} placeholder="كل الموظفين"
-                options={(scope === 'complex' ? db.people.filter((p) => p.active) : staffOf(db, mid))
-                  .map((p) => ({ value: p.id, label: p.name }))} />
-            </>
+          {status !== 'all' && (
+            <button onClick={() => setStatusFilter('all')} className="chip bg-navy-50 text-navy-800">
+              {status === 'late' ? 'متأخرة' : STATUS_LABEL[status]} ✕
+            </button>
           )}
         </div>
+      )}
 
-        {list.length === 0 ? (
-          <Empty icon="🗒️"
-            title={tc.total ? 'لا توجد مهام في هذا التصنيف' : 'لا توجد مهام بعد'}
-            hint={scope === 'mine'
-              ? 'أضف مهمة لنفسك، أو انتظر ما يُسند إليك من مدير المجمع أو مشرف مسجدك.'
-              : 'أضف مهمة أو قرارًا أو توصية، وحدّد المسؤول والموعد.'}
-            action={<button className="btn-primary btn-sm" onClick={() => { setEditing(null); setOpen(true) }}>＋ مهمة جديدة</button>} />
-        ) : (
-          <ul className="divide-y divide-line">
-            {list.map((t) => {
-              const d = dueLabel(t.dueDate)
-              const late = t.status !== 'done' && d.diff < 0
-              const st = STATUS_STYLE[t.status]
-              const assignee = db.people.find((p) => p.id === t.assigneeId)
-              const wa = waLink(assignee?.phone, taskReminder({
-                name: assignee?.name ?? '', title: t.title, kind: KIND_LABEL[t.kind],
-                due: fmtDate(t.dueDate), complex: db.settings.complexName, late,
-              }))
-
-              return (
-                <li key={t.id} className={`relative ${st.tint}`}>
-                  <span className={`absolute inset-y-0 right-0 w-1.5 ${late && t.status !== 'done' ? 'bg-orange-500' : st.bar}`} />
-                  <div className="pr-4 pl-3 sm:pr-5 sm:pl-4 py-3.5">
-                    <div className="flex items-start gap-3">
-                      {/* علامة الإنجاز */}
-                      <button
-                        onClick={() => canEdit(t) && setStatus(t.id, t.status === 'done' ? 'pending' : 'done')}
-                        disabled={!canEdit(t)} title={t.status === 'done' ? 'إرجاعها قيد التنفيذ' : 'تعليمها منجزة'}
-                        className={`tap mt-0.5 w-6 h-6 shrink-0 rounded-lg border-2 grid place-items-center transition
-                          ${t.status === 'done'
-                            ? 'bg-navy-600 border-navy-600 text-white'
-                            : 'border-ink-300 text-transparent hover:border-navy-500'}`}>
-                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M4 12l6 6L20 6" />
-                        </svg>
-                      </button>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={`chip ${t.kind === 'decision' ? 'bg-navy-700 text-white' : t.kind === 'recommendation' ? 'bg-orange-100 text-orange-700' : 'bg-navy-50 text-navy-800'}`}>
-                            {KIND_LABEL[t.kind]}
-                          </span>
-                          <h4 className={`font-bold text-[14.5px] leading-6 ${st.title}`}>{t.title}</h4>
-                          {late && <Badge tone="bad" dot>متأخرة {Math.abs(d.diff)} يوم</Badge>}
-                        </div>
-
-                        {t.details && <p className="text-[12.5px] text-ink-500 mt-1.5 leading-6 whitespace-pre-wrap">{t.details}</p>}
-                        {t.note && <p className="text-[12px] text-orange-800 bg-orange-50 rounded-lg px-2.5 py-1.5 mt-2">{t.note}</p>}
-
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2.5 text-[11.5px] font-bold text-ink-500">
-                          {scope === 'complex' && <span>{mosqueName(db, t.mosqueId)}</span>}
-                          <span>{committeeName(db, t.committeeId)}</span>
-                          <span className="inline-flex items-center gap-1.5">
-                            {personName(db, t.assigneeId)}
-                            {t.status !== 'done' && wa && (
-                              <a href={wa} target="_blank" rel="noreferrer" title={`تذكير ${assignee?.name} عبر واتساب`}
-                                className="tap inline-grid place-items-center w-6 h-6 rounded-md bg-navy-50 text-navy-800 hover:bg-navy-100 transition no-print">
-                                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="currentColor">
-                                  <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5v-.4l-.8-1.8c-.2-.4-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.3.9 2.5 1.1 2.7a10 10 0 0 0 3.8 3.4c1.4.5 2 .6 2.6.5.5-.1 1.4-.6 1.6-1.2.2-.6.2-1 .1-1.2z" />
-                                </svg>
-                              </a>
-                            )}
-                            {t.status !== 'done' && !hasWhatsapp(assignee?.phone) && (
-                              <span className="text-[10px] text-ink-300" title="لا يوجد رقم جوال مسجّل">—</span>
-                            )}
-                          </span>
-                          <span className={late ? 'text-orange-700' : ''}>
-                            {t.status === 'done' ? `أُنجزت ${fmtDate(t.doneAt ?? t.dueDate)}` : `${fmtDate(t.dueDate)} · ${d.text}`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0 no-print">
-                        <select value={t.status} onChange={(e) => setStatus(t.id, e.target.value as TaskStatus)}
-                          disabled={!canEdit(t)} aria-label="حالة المهمة"
-                          className={`h-9 rounded-lg px-2.5 text-[12px] font-bold border-0 outline-none cursor-pointer ${st.pill}`}>
-                          {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                        </select>
-                        {canEdit(t) && (
-                          <Menu items={[
-                            { label: 'تعديل المهمة', icon: '✎', onClick: () => { setEditing(t); setOpen(true) } },
-                            ...(wa ? [{ label: 'تذكير عبر واتساب', icon: '💬', onClick: () => window.open(wa, '_blank') }] : []),
-                            ...(isDirector || t.createdBy === user?.id
-                              ? ['sep' as const, { label: 'حذف المهمة', icon: '🗑', danger: true, onClick: () => remove(t.id) }]
-                              : []),
-                          ]} />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </Card>
+      {view === 'list' && (
+        <ListView tasks={list} total={base.length} a={actions} today={today} showMosque={scope === 'complex'}
+          onQuickAdd={quickAdd} onAdd={() => openModal(null, quad && quad !== 'none' ? { priority: quad } : undefined)}
+          emptyHint={scope === 'mine'
+            ? 'أضف مهمة لنفسك من الحقل أعلاه، أو انتظر ما يُسند إليك من مدير المجمع أو مشرف مسجدك.'
+            : 'أضف مهمة أو قرارًا أو توصية، وحدّد أولويتها والمسؤول والموعد.'} />
+      )}
+      {view === 'matrix' && (
+        <MatrixView tasks={scoped} a={actions} today={today} onAdd={(p) => openModal(null, p ? { priority: p } : undefined)} />
+      )}
+      {view === 'calendar' && (
+        <CalendarView tasks={list} a={actions} today={today}
+          onAdd={(day) => openModal(null, { dueDate: day, ...(quad && quad !== 'none' ? { priority: quad } : {}) })} />
+      )}
 
       <TaskModal
-        open={open} onClose={() => { setOpen(false); setEditing(null) }} task={editing}
-        scope={scope}
-        mosqueId={scope === 'mosque' ? mid : (editing?.mosqueId ?? (user!.mosqueId === 'complex' ? db.mosques[0]?.id : user!.mosqueId as string))}
+        open={open} onClose={() => { setOpen(false); setEditing(null); setDraft(undefined) }}
+        task={editing} draft={draft} scope={scope}
+        mosqueId={scope === 'mosque' ? mid : (editing?.mosqueId ?? defaultMosque)}
       />
     </div>
   )
 }
 
-/* ================= نموذج المهمة ================= */
-function TaskModal({ open, onClose, task, mosqueId, scope }: {
-  open: boolean; onClose: () => void; task: Task | null; mosqueId: string; scope: Scope
+/* ================= لوحة التركيز: ماذا عليّ الآن؟ ================= */
+function FocusPanel({ tasks, a, today, quad, setQuad }: {
+  tasks: Task[]; a: TaskActions; today: string
+  quad: TaskPriority | 'none' | ''; setQuad: (q: TaskPriority | 'none' | '') => void
 }) {
-  const { db, set } = useDb()
-  const { user, isDirector } = useAuth()
-  const toast = useToast()
+  const open = tasks.filter((t) => t.status !== 'done')
+  const late = open.filter((t) => t.dueDate < today)
+  const dueToday = tasks.filter((t) => t.dueDate === today)
+  const doneToday = dueToday.filter((t) => t.status === 'done').length
+  const q1 = open.filter((t) => t.priority === 'q1')
+  const unsorted = open.filter((t) => !t.priority).length
 
-  const canAssignOthers = isDirector || user?.role === 'supervisor'
-  const [f, setF] = useState<any>({})
-  const [key, setKey] = useState('')
-  const sig = `${open}-${task?.id ?? 'new'}`
-  if (sig !== key) {
-    setKey(sig)
-    setF(task ? { ...task } : {
-      mosqueId,
-      title: '', details: '', kind: 'task', status: 'pending',
-      committeeId: canAssignOthers ? '' : (user!.committeeIds[0] ?? ''),
-      assigneeId: canAssignOthers ? '' : user!.id,
-      dueDate: shiftDays(todayISO(), 3), remindBefore: 2, note: '',
-    })
-  }
+  // أهم ما يجب فعله الآن: المثبّتة والمتأخرة ومستحقة اليوم، مرتبة بالأولوية
+  const next = open
+    .filter((t) => isPinnedOn(t, today) || t.dueDate <= today || t.priority === 'q1')
+    .sort(sortTasks)
+    .slice(0, 3)
 
-  const committees = committeesOf(db, f.mosqueId ?? mosqueId)
-  const people = staffOf(db, f.mosqueId ?? mosqueId)
-  const inCommittee = f.committeeId ? people.filter((p) => p.committeeIds.includes(f.committeeId)) : people
-  const pool = inCommittee.length ? inCommittee : people
+  const headline = q1.length
+    ? `ابدأ بـ ${q1.length} ${q1.length === 1 ? 'مهمة هامة وعاجلة' : 'مهام هامة وعاجلة'}`
+    : late.length
+      ? `لديك ${late.length} ${late.length === 1 ? 'مهمة متأخرة' : 'مهام متأخرة'} — أنهِها أولًا`
+      : open.length
+        ? 'لا شيء عاجل — وقت مثالي للمهام الهامة'
+        : 'لا مهام مفتوحة — يومك صافٍ'
 
-  const pickAssignee = (pid: string) => {
-    const p = db.people.find((x) => x.id === pid)
-    setF((s: any) => ({ ...s, assigneeId: pid, committeeId: s.committeeId || p?.committeeIds[0] || '' }))
-  }
-  const pickCommittee = (cid: string) => {
-    const c = db.committees.find((x) => x.id === cid)
-    setF((s: any) => {
-      const still = s.assigneeId && db.people.find((p) => p.id === s.assigneeId)?.committeeIds.includes(cid)
-      return { ...s, committeeId: cid, assigneeId: still ? s.assigneeId : (c?.leaderId ?? '') }
-    })
-  }
-
-  const save = () => {
-    if (!f.title?.trim()) return toast('اكتب عنوان المهمة.', 'bad')
-    if (canAssignOthers && !f.assigneeId) return toast('اختر الموظف المسؤول عن المهمة.', 'bad')
-    const committeeId = f.committeeId || user!.committeeIds[0] || committees[0]?.id
-    const assigneeId = f.assigneeId || user!.id
-    if (!committeeId) return toast('اختر اللجنة.', 'bad')
-    if (!assigneeId) return toast('اختر المسؤول.', 'bad')
-
-    set((d) => {
-      if (task) {
-        const t = d.tasks.find((x) => x.id === task.id)!
-        Object.assign(t, { ...f, committeeId, assigneeId })
-        if (f.status === 'done' && !t.doneAt) t.doneAt = todayISO()
-        if (f.status !== 'done') t.doneAt = undefined
-      } else {
-        d.tasks.push({
-          id: uid('t'), mosqueId: f.mosqueId, committeeId, assigneeId,
-          title: f.title.trim(), details: f.details ?? '', kind: f.kind, status: f.status,
-          dueDate: f.dueDate, remindBefore: Number(f.remindBefore) || 2,
-          createdBy: user!.id, createdAt: todayISO(), note: f.note,
-          doneAt: f.status === 'done' ? todayISO() : undefined,
-        })
-      }
-    })
-    toast(task ? 'تم حفظ التعديلات' : 'أُضيفت المهمة')
-    onClose()
-  }
+  const pct = dueToday.length ? Math.round((doneToday / dueToday.length) * 100) : 0
+  const R = 26, C = 2 * Math.PI * R
 
   return (
-    <Modal open={open} onClose={onClose} title={task ? 'تعديل مهمة' : 'مهمة جديدة'} wide
-      footer={<>
-        <button className="btn-primary" onClick={save}>{task ? 'حفظ' : 'إضافة'}</button>
-        <button className="btn-ghost" onClick={onClose}>إلغاء</button>
-      </>}>
-      <div className="space-y-4">
-        <Field label="ماذا يجب عمله؟" required>
-          <input className="field" value={f.title ?? ''} onChange={(e) => setF({ ...f, title: e.target.value })}
-            placeholder="مثال: تجهيز مسابقة الحفظ الشهرية" autoFocus />
-        </Field>
-
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="النوع">
-            <Select value={f.kind ?? 'task'} onChange={(v) => setF({ ...f, kind: v })} placeholder=""
-              options={Object.entries(KIND_LABEL).map(([v, l]) => ({ value: v, label: l }))} />
-          </Field>
-          <Field label="الحالة">
-            <Select value={f.status ?? 'pending'} onChange={(v) => setF({ ...f, status: v })} placeholder=""
-              options={Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l }))} />
-          </Field>
-
-          {scope === 'complex' && (
-            <Field label="المسجد" required>
-              <Select value={f.mosqueId ?? ''} onChange={(v) => setF({ ...f, mosqueId: v, committeeId: '', assigneeId: '' })}
-                options={db.mosques.map((m) => ({ value: m.id, label: m.name }))} />
-            </Field>
-          )}
-
-          {canAssignOthers ? (
-            <>
-              <Field label="اللجنة" required hint="اختيار اللجنة يقترح رئيسها مسؤولًا">
-                <Select value={f.committeeId ?? ''} onChange={pickCommittee} placeholder="اختر اللجنة…"
-                  options={committees.map((c) => ({ value: c.id, label: c.name }))} />
-              </Field>
-              <Field label="الموظف المسؤول" required hint="اختيار الموظف يملأ لجنته تلقائيًا">
-                <Select value={f.assigneeId ?? ''} onChange={pickAssignee} placeholder="اختر الموظف المسؤول…"
-                  options={pool.map((p) => ({ value: p.id, label: `${p.name} — ${p.jobTitle}` }))} />
-              </Field>
-            </>
-          ) : (
-            <Field label="الموظف المسؤول" hint="المهام التي تضيفها تُسند إليك">
-              <input className="field bg-navy-50" value={user!.name} disabled />
-            </Field>
-          )}
-
-          <Field label="الموعد" required>
-            <input type="date" className="field" value={f.dueDate ?? ''} onChange={(e) => setF({ ...f, dueDate: e.target.value })} />
-          </Field>
-          <Field label="التنبيه قبل الموعد">
-            <Select value={String(f.remindBefore ?? 2)} onChange={(v) => setF({ ...f, remindBefore: Number(v) })} placeholder=""
-              options={[1, 2, 3, 5, 7, 10].map((n) => ({ value: String(n), label: `${n} يوم` }))} />
-          </Field>
+    <section className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-3">
+      <div className="hero p-5 sm:p-6">
+        <div aria-hidden className="absolute -left-10 -top-16 w-56 h-56 rounded-full bg-orange-500/10 blur-2xl" />
+        <div className="relative flex items-start gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11.5px] font-bold text-white/60">{fmtDayName(today)} · {fmtDate(today)} · {fmtHijri(today)}</p>
+            <h2 className="!text-[19px] sm:!text-[22px] text-white mt-1.5">{headline}</h2>
+            <p className="text-[12.5px] text-white/65 mt-1">
+              {open.length} مفتوحة · {late.length} متأخرة · {dueToday.length} مستحقة اليوم{unsorted ? ` · ${unsorted} بلا تصنيف` : ''}
+            </p>
+          </div>
+          <div className="relative w-[68px] h-[68px] shrink-0" title="إنجاز مهام اليوم">
+            <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
+              <circle cx="32" cy="32" r={R} fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="6" />
+              <circle cx="32" cy="32" r={R} fill="none" stroke="#F0820E" strokeWidth="6" strokeLinecap="round"
+                strokeDasharray={C} strokeDashoffset={C - (C * pct) / 100} className="transition-all duration-700" />
+            </svg>
+            <div className="absolute inset-0 grid place-items-center text-center leading-none">
+              <span className="num text-[15px] text-white">{doneToday}/{dueToday.length}</span>
+              <span className="text-[9px] font-bold text-white/55 -mt-3">اليوم</span>
+            </div>
+          </div>
         </div>
 
-        <AiTextArea label="تفاصيل (اختياري)" value={f.details ?? ''} onChange={(v) => setF({ ...f, details: v })}
-          kind="task" rows={3} placeholder="أي تفاصيل تساعد على التنفيذ…" />
-
-        <Field label="ملاحظة متابعة" hint="مثل سبب التعثر أو التأجيل — تظهر بلون مميز">
-          <input className="field" value={f.note ?? ''} onChange={(e) => setF({ ...f, note: e.target.value })} placeholder="اختياري" />
-        </Field>
+        {next.length > 0 && (
+          <ul className="relative mt-4 space-y-1.5">
+            {next.map((t) => {
+              const qd = t.priority ? QUADRANTS[t.priority] : null
+              const diff = daysBetween(today, t.dueDate)
+              return (
+                <li key={t.id} className="flex items-center gap-2.5 rounded-xl bg-white/[.07] border border-white/10 px-3 py-2">
+                  <i className={`w-2 h-2 rounded-full shrink-0 ${qd ? qd.dot : 'bg-white/40'}`} />
+                  <button className="min-w-0 flex-1 text-right text-[13px] font-bold text-white truncate" onClick={() => a.canEdit(t) && a.edit(t)}>
+                    {isPinnedOn(t, today) && <PinIcon className="inline w-3 h-3 ml-1 text-orange-300" />}{t.title}
+                  </button>
+                  <span className={`text-[11px] font-bold shrink-0 ${diff < 0 ? 'text-orange-300' : 'text-white/55'}`}>
+                    {diff < 0 ? `متأخرة ${-diff} يوم` : diff === 0 ? 'اليوم' : fmtDate(t.dueDate).replace(/ \d{4}$/, '')}
+                  </span>
+                  {a.canEdit(t) && (
+                    <button onClick={() => a.setStatus(t.id, 'done')} title="تعليمها منجزة" aria-label="تعليمها منجزة"
+                      className="tap w-7 h-7 rounded-lg grid place-items-center bg-white/10 hover:bg-white/20 text-white shrink-0 transition">
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l6 6L20 6" /></svg>
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
-    </Modal>
+
+      {/* المربعات الأربعة — تعمل مرشّحًا لكل العروض */}
+      <div className="grid grid-cols-2 gap-2.5">
+        {QUADRANT_ORDER.map((p) => {
+          const qd = QUADRANTS[p]
+          const n = open.filter((t) => t.priority === p).length
+          const on = quad === p
+          return (
+            <button key={p} onClick={() => setQuad(on ? '' : p)} aria-pressed={on}
+              className={`relative overflow-hidden text-right rounded-2xl border px-4 py-3.5 transition bg-surface shadow-soft
+                ${on ? `ring-2 ${qd.ring} ${qd.soft}` : 'border-line/90 hover:-translate-y-px'}`}>
+              <span className={`absolute inset-y-3 right-0 w-1 rounded-l-full ${qd.bar}`} />
+              <div className="flex items-start justify-between gap-2">
+                <span className={`text-[12px] font-black ${qd.ink}`}>{qd.label}</span>
+                <span className={`w-2.5 h-2.5 rounded-full mt-1 ${qd.dot}`} />
+              </div>
+              <div className="num text-[26px] leading-none mt-2 text-ink-900">{n}</div>
+              <div className="text-[11px] font-bold text-ink-400 mt-1.5 truncate">{qd.action}</div>
+            </button>
+          )
+        })}
+      </div>
+    </section>
   )
 }
+
+/* ================= القائمة الذكية ================= */
+const ORDER: GroupKey[] = ['pinned', 'late', 'today', 'tomorrow', 'week', 'later', 'done']
+
+function ListView({ tasks, total, a, today, showMosque, onQuickAdd, onAdd, emptyHint }: {
+  tasks: Task[]; total: number; a: TaskActions; today: string; showMosque: boolean
+  onQuickAdd: (title: string, p: TaskPriority | undefined, due: string) => void
+  onAdd: () => void; emptyHint: string
+}) {
+  const groups = useMemo(() => groupByTime(tasks, today), [tasks, today])
+  const [collapsed, setCollapsed] = useState<Partial<Record<GroupKey, boolean>>>({ done: true })
+
+  return (
+    <div className="space-y-3">
+      <QuickAdd today={today} onAdd={onQuickAdd} />
+
+      {tasks.length === 0 ? (
+        <div className="card">
+          <Empty icon="🗒️" title={total ? 'لا توجد مهام بهذا التصنيف' : 'لا توجد مهام بعد'} hint={emptyHint}
+            action={<button className="btn-primary btn-sm" onClick={onAdd}>＋ مهمة جديدة</button>} />
+        </div>
+      ) : (
+        ORDER.filter((k) => groups[k].length).map((k) => {
+          const g = GROUP_META[k]
+          const isClosed = !!collapsed[k]
+          return (
+            <section key={k} className="card overflow-hidden">
+              <button onClick={() => setCollapsed((c) => ({ ...c, [k]: !c[k] }))} aria-expanded={!isClosed}
+                className="w-full flex items-center gap-2.5 px-4 sm:px-5 py-3 text-right hover:bg-navy-50/40 transition">
+                <svg viewBox="0 0 24 24" className={`w-4 h-4 text-ink-400 transition-transform ${isClosed ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
+                {k === 'pinned' && <PinIcon className="w-4 h-4 text-navy-700" />}
+                <h3 className={`sect-title ${g.tone}`}>{g.label}</h3>
+                <span className="num text-[12px] text-ink-400 bg-navy-50 rounded-md px-1.5 py-0.5">{groups[k].length}</span>
+                {g.hint && <span className="hidden sm:inline text-[11.5px] font-bold text-ink-400 truncate">— {g.hint}</span>}
+                <span className="mr-auto flex items-center gap-1">
+                  {QUADRANT_ORDER.map((p) => {
+                    const n = groups[k].filter((t) => t.priority === p).length
+                    return n ? (
+                      <span key={p} className={`inline-flex items-center gap-1 text-[10.5px] font-black ${QUADRANTS[p].ink}`} title={QUADRANTS[p].label}>
+                        <i className={`w-2 h-2 rounded-full ${QUADRANTS[p].dot}`} />{n}
+                      </span>
+                    ) : null
+                  })}
+                </span>
+              </button>
+              {!isClosed && (
+                <ul className="divide-line border-t border-line/70">
+                  {groups[k].map((t) => <TaskRow key={t.id} t={t} a={a} today={today} showMosque={showMosque} />)}
+                </ul>
+              )}
+            </section>
+          )
+        })
+      )}
+    </div>
+  )
+}
+
+/* ================= الإضافة السريعة على طريقة TickTick ================= */
+function QuickAdd({ today, onAdd }: { today: string; onAdd: (title: string, p: TaskPriority | undefined, due: string) => void }) {
+  const [title, setTitle] = useState('')
+  const [p, setP] = useState<TaskPriority | undefined>()
+  const [due, setDue] = useState(today)
+
+  const submit = () => {
+    if (!title.trim()) return
+    onAdd(title.trim(), p, due)
+    setTitle('')
+  }
+  const dayChips = [
+    { l: 'اليوم', v: today }, { l: 'غدًا', v: shiftDays(today, 1) }, { l: 'بعد أسبوع', v: shiftDays(today, 7) },
+  ]
+
+  return (
+    <div className="card p-2.5 sm:p-3 no-print">
+      <div className="flex items-center gap-2">
+        <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0 bg-navy-50 text-navy-700 text-[18px] font-bold">＋</span>
+        <input className="flex-1 min-w-0 h-10 bg-transparent outline-none text-[14.5px] font-bold text-ink-900 placeholder:text-ink-300 placeholder:font-normal"
+          placeholder="أضف مهمة… ثم اضغط Enter" value={title}
+          onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
+        <button className="btn-primary btn-sm shrink-0" onClick={submit} disabled={!title.trim()}>إضافة</button>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 pr-11">
+        <div className="flex items-center gap-1.5" role="radiogroup" aria-label="الأولوية">
+          <span className="text-[11px] font-bold text-ink-400 ml-0.5">الأولوية</span>
+          {QUADRANT_ORDER.map((k) => {
+            const qd = QUADRANTS[k]
+            const on = p === k
+            return (
+              <button key={k} role="radio" aria-checked={on} title={qd.label} onClick={() => setP(on ? undefined : k)}
+                className={`chip !px-2 !py-0.5 border transition ${on ? `${qd.soft} ${qd.ink}` : 'border-transparent text-ink-500 hover:bg-navy-50'}`}
+                style={on ? { borderColor: `rgb(var(--${k}) / .5)` } : undefined}>
+                <i className={`w-2 h-2 rounded-full ${qd.dot}`} />
+                <span className={on ? '' : 'hidden xs:inline'}>{qd.short}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-bold text-ink-400 ml-0.5">الموعد</span>
+          {dayChips.map((c) => (
+            <button key={c.l} onClick={() => setDue(c.v)}
+              className={`chip !py-0.5 border transition ${due === c.v ? 'bg-navy-700 text-white border-navy-700' : 'border-line text-ink-500 hover:bg-navy-50'}`}>
+              {c.l}
+            </button>
+          ))}
+          <input type="date" value={due} onChange={(e) => e.target.value && setDue(e.target.value)} aria-label="تاريخ آخر"
+            className="h-7 rounded-full border border-line bg-surface px-2 text-[11px] font-bold text-ink-500 outline-none focus:border-orange-400" />
+        </div>
+      </div>
+    </div>
+  )
+}
+

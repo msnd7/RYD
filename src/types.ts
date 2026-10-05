@@ -54,6 +54,8 @@ export interface Committee {
 
 export type TaskKind = 'task' | 'decision' | 'recommendation'
 export type TaskStatus = 'pending' | 'done' | 'stuck' | 'postponed'
+/** تصنيف مصفوفة أيزنهاور: q1 هام وعاجل · q2 هام غير عاجل · q3 عاجل غير هام · q4 غير هام وغير عاجل */
+export type TaskPriority = 'q1' | 'q2' | 'q3' | 'q4'
 
 export interface Task {
   id: ID
@@ -70,6 +72,11 @@ export interface Task {
   createdAt: string
   doneAt?: string
   note?: string
+  /** موقعها في مصفوفة أيزنهاور — غير المصنّفة تبقى بلا قيمة */
+  priority?: TaskPriority
+  /** تثبيت المهمة أعلى القائمة وعلى التقويم خلال فترة يحددها المستخدم */
+  pinFrom?: string
+  pinTo?: string
 }
 
 export type AttStatus = 'present' | 'absent' | 'excused'

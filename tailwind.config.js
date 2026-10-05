@@ -23,6 +23,11 @@ export default {
           400: v('--orange-400'), 500: v('--orange-500'), 600: v('--orange-600'), 700: v('--orange-700'),
           800: v('--orange-800'), 900: v('--orange-900'),
         },
+        // مصفوفة أيزنهاور — لون لكل مربع يظهر في القائمة والمصفوفة والتقويم
+        q1: { DEFAULT: v('--q1'), soft: v('--q1-soft'), ink: v('--q1-ink') },
+        q2: { DEFAULT: v('--q2'), soft: v('--q2-soft'), ink: v('--q2-ink') },
+        q3: { DEFAULT: v('--q3'), soft: v('--q3-soft'), ink: v('--q3-ink') },
+        q4: { DEFAULT: v('--q4'), soft: v('--q4-soft'), ink: v('--q4-ink') },
         ink: {
           900: v('--ink-900'), 800: v('--ink-800'), 700: v('--ink-700'),
           500: v('--ink-500'), 400: v('--ink-400'), 300: v('--ink-300'),
