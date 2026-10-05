@@ -357,6 +357,18 @@
   .doc-table tfoot td { @apply bg-navy-50 font-black; }
 }
 
+/* ===== تخطيط الجوال — خارج الطبقات حتى لا تولّد منه Tailwind متغيرات ===== */
+/*
+  عمود النص المرن (flex-1) داخل صف قابل للالتفاف: أساسه 0 مع min-width: 0
+  يمنع الالتفاف فينضغط النص في عمود ضيق على الجوال. نعطيه عرضًا أدنى
+  فيلتف ما بجانبه (أزرار، شعار) إلى السطر التالي بدل سحق النص.
+*/
+main .flex-wrap > [class~="flex-1"][class~="min-w-0"] { flex-basis: 13rem; }
+/* الجداول على الجوال: تأخذ عرض محتواها وتُمرَّر أفقيًا بدل تكسير الأسماء حرفًا حرفًا */
+@media (max-width: 639px) {
+  main .overflow-x-auto > table:not(.doc-table) { width: max-content; min-width: 100%; }
+}
+
 /* ===== الطباعة: منطقة التقرير فقط ===== */
 @media print {
   @page { size: A4; margin: 12mm; }

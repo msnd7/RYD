@@ -153,36 +153,39 @@ export default function Tasks({ scope = 'mosque' }: { scope?: TaskScope }) {
 
       {/* شريط الأدوات: العرض + البحث + المرشّحات */}
       <div className="flex flex-wrap items-center gap-2.5 no-print">
-        <div className="seg" role="tablist" aria-label="طريقة العرض">
+        <div className="seg w-full sm:w-auto" role="tablist" aria-label="طريقة العرض">
           {VIEWS.map((v) => (
             <button key={v.key} role="tab" aria-selected={view === v.key} onClick={() => setView(v.key)}
-              className={`seg-btn inline-flex items-center gap-1.5 !h-9 !px-3.5 ${view === v.key ? 'seg-on' : ''}`}>
+              className={`seg-btn flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 !h-9 !px-3.5 ${view === v.key ? 'seg-on' : ''}`}>
               {v.icon}{v.label}
             </button>
           ))}
         </div>
-        <div className="relative flex-1 min-w-[180px]">
+        <div className="relative flex-1 basis-full sm:basis-auto min-w-[180px]">
           <svg viewBox="0 0 24 24" className="w-4 h-4 absolute top-1/2 -translate-y-1/2 right-3 text-ink-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
           <input className="field !h-10 pr-9" placeholder="بحث في المهام…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <Select className="!h-10 !w-auto min-w-[130px]" value={status === 'all' ? '' : status} onChange={(v) => setStatusFilter((v || 'all') as StatusFilter)}
-          placeholder="كل الحالات"
-          options={[...Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })), { value: 'late', label: 'متأخرة' }]} />
-        {scope === 'complex' && (
-          <Select className="!h-10 !w-auto min-w-[140px]" value={fMosque} onChange={setFMosque} placeholder="كل المساجد"
-            options={db.mosques.map((m) => ({ value: m.id, label: m.name }))} />
-        )}
-        {scope !== 'mine' && (
-          <>
-            <Select className="!h-10 !w-auto min-w-[140px]" value={fCommittee} onChange={setFCommittee} placeholder="كل اللجان"
-              options={(scope === 'complex' ? db.committees : committeesOf(db, mid)).map((c) => ({
-                value: c.id, label: scope === 'complex' ? `${c.name} — ${mosqueName(db, c.mosqueId)}` : c.name,
-              }))} />
-            <Select className="!h-10 !w-auto min-w-[140px]" value={fPerson} onChange={setFPerson} placeholder="كل الموظفين"
-              options={(scope === 'complex' ? db.people.filter((p) => p.active) : staffOf(db, mid))
-                .map((p) => ({ value: p.id, label: p.name }))} />
-          </>
-        )}
+        {/* المرشّحات: شبكة عمودين على الجوال، وصف واحد على الشاشات الأعرض */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto [&>*:last-child:nth-child(odd)]:col-span-2">
+          <Select className="!h-10 sm:!w-auto sm:min-w-[130px]" value={status === 'all' ? '' : status} onChange={(v) => setStatusFilter((v || 'all') as StatusFilter)}
+            placeholder="كل الحالات"
+            options={[...Object.entries(STATUS_LABEL).map(([v, l]) => ({ value: v, label: l })), { value: 'late', label: 'متأخرة' }]} />
+          {scope === 'complex' && (
+            <Select className="!h-10 sm:!w-auto sm:min-w-[140px] sm:max-w-[220px]" value={fMosque} onChange={setFMosque} placeholder="كل المساجد"
+              options={db.mosques.map((m) => ({ value: m.id, label: m.name }))} />
+          )}
+          {scope !== 'mine' && (
+            <>
+              <Select className="!h-10 sm:!w-auto sm:min-w-[140px] sm:max-w-[220px]" value={fCommittee} onChange={setFCommittee} placeholder="كل اللجان"
+                options={(scope === 'complex' ? db.committees : committeesOf(db, mid)).map((c) => ({
+                  value: c.id, label: scope === 'complex' ? `${c.name} — ${mosqueName(db, c.mosqueId)}` : c.name,
+                }))} />
+              <Select className="!h-10 sm:!w-auto sm:min-w-[140px] sm:max-w-[220px]" value={fPerson} onChange={setFPerson} placeholder="كل الموظفين"
+                options={(scope === 'complex' ? db.people.filter((p) => p.active) : staffOf(db, mid))
+                  .map((p) => ({ value: p.id, label: p.name }))} />
+            </>
+          )}
+        </div>
       </div>
 
       {(quad || status !== 'all') && (
@@ -307,22 +310,22 @@ function FocusPanel({ tasks, a, today, quad, setQuad }: {
       </div>
 
       {/* المربعات الأربعة — تعمل مرشّحًا لكل العروض */}
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-4 lg:grid-cols-2 gap-2 sm:gap-2.5">
         {QUADRANT_ORDER.map((p) => {
           const qd = QUADRANTS[p]
           const n = open.filter((t) => t.priority === p).length
           const on = quad === p
           return (
             <button key={p} onClick={() => setQuad(on ? '' : p)} aria-pressed={on}
-              className={`relative overflow-hidden text-right rounded-2xl border px-4 py-3.5 transition bg-surface shadow-soft
+              className={`relative overflow-hidden text-right rounded-2xl border px-2.5 py-2.5 sm:px-4 sm:py-3.5 transition bg-surface shadow-soft
                 ${on ? `ring-2 ${qd.ring} ${qd.soft}` : 'border-line/90 hover:-translate-y-px'}`}>
               <span className={`absolute inset-y-3 right-0 w-1 rounded-l-full ${qd.bar}`} />
               <div className="flex items-start justify-between gap-2">
-                <span className={`text-[12px] font-black ${qd.ink}`}>{qd.label}</span>
-                <span className={`w-2.5 h-2.5 rounded-full mt-1 ${qd.dot}`} />
+                <span className={`text-[10.5px] sm:text-[12px] leading-4 font-black ${qd.ink}`}>{qd.label}</span>
+                <span className={`hidden sm:block w-2.5 h-2.5 rounded-full mt-1 ${qd.dot}`} />
               </div>
-              <div className="num text-[26px] leading-none mt-2 text-ink-900">{n}</div>
-              <div className="text-[11px] font-bold text-ink-400 mt-1.5 truncate">{qd.action}</div>
+              <div className="num text-[22px] sm:text-[26px] leading-none mt-1.5 sm:mt-2 text-ink-900">{n}</div>
+              <div className="hidden sm:block text-[11px] font-bold text-ink-400 mt-1.5 truncate">{qd.action}</div>
             </button>
           )
         })}

@@ -33,7 +33,7 @@ export default function ComplexHome() {
         <div aria-hidden className="absolute -left-16 -top-24 w-72 h-72 rounded-full bg-orange-500/25 blur-3xl" />
         <div aria-hidden className="absolute left-1/3 -bottom-28 w-72 h-72 rounded-full bg-sky-400/10 blur-3xl" />
         <div className="relative flex flex-wrap items-center gap-x-5 gap-y-4">
-          <span className="w-[76px] h-[76px] rounded-[22px] bg-white grid place-items-center shadow-lift shrink-0">
+          <span className="hidden sm:grid w-[76px] h-[76px] rounded-[22px] bg-white place-items-center shadow-lift shrink-0">
             <LogoMark h={58} />
           </span>
           <div className="min-w-0 flex-1">
@@ -42,7 +42,7 @@ export default function ComplexHome() {
             <p className="text-[12.5px] text-white/70 mt-1">{db.settings.complexSubtitle}</p>
           </div>
           {isDirector && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none [&>*]:justify-center">
               <Link to="/complex/finance" className="rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 px-3.5 h-10 inline-flex items-center text-[12.5px] font-bold transition">💰 الرواتب</Link>
               <Link to="/complex/announcements" className="rounded-xl bg-orange-500 hover:bg-orange-600 px-3.5 h-10 inline-flex items-center text-[12.5px] font-bold transition">＋ إعلان</Link>
             </div>

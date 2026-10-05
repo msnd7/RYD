@@ -8,13 +8,13 @@ export function ReportHeader({ title, subtitle, period }: {
 }) {
   const { db } = useDb()
   return (
-    <header className="flex items-center gap-4 border-b-2 border-navy-700 pb-4">
+    <header className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b-2 border-navy-700 pb-4">
       <img src={logoSrc} alt="" style={{ height: 52 }} className="w-auto object-contain" />
       <div className="flex-1 min-w-0">
         <h2 className="font-display font-black text-[19px] text-navy-800">{db.settings.complexName}</h2>
         <p className="text-[11px] text-ink-500">{db.settings.complexSubtitle}</p>
       </div>
-      <div className="text-left shrink-0">
+      <div className="w-full sm:w-auto text-right sm:text-left shrink-0">
         <h3 className="font-extrabold text-[15px]">{title}</h3>
         {subtitle && <p className="text-[12px] text-ink-500">{subtitle}</p>}
         {period && <p className="text-[11px] text-ink-500">{period}</p>}
