@@ -5,6 +5,7 @@ import { Card, Progress, Badge, StatStrip } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { ActionInbox } from '../components/ActionInbox'
 import { LogoMark } from '../components/Brand'
+import { HonorsTeaser } from '../components/honors'
 import { todayISO, shiftDays, fmtDate, fmtHijri, fmtDayName } from '../lib/date'
 import { staffOf, taskCounts, tasksOf, attendanceStats } from '../lib/selectors'
 
@@ -62,6 +63,8 @@ export default function ComplexHome() {
       ]} />
 
       {isDirector && !setupDone && <SetupChecklist />}
+
+      <HonorsTeaser mosqueId="all" to="/complex/excellence" />
 
       <section>
         <div className="flex items-baseline justify-between gap-3 mb-3">
