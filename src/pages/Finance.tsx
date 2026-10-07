@@ -1,23 +1,22 @@
 import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { useDb, uid } from '../store/db'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { useDb } from '../store/db'
 import { useAuth } from '../store/auth'
 import {
-  Card, Modal, Field, Select, Badge, Empty, useToast, Tabs,
-  FileDrop, FileChips, Progress, StatStrip,
+  Card, Modal, Field, Select, Badge, Empty, useToast, Tabs, Progress, StatStrip,
 } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { CustodyRequestModal } from '../components/CustodyRequestModal'
+import { ExpenseModal, ExpenseItems } from '../components/CustodyExpense'
 import { todayISO, fmtDate } from '../lib/date'
-import { fileSrc } from '../lib/files'
 import { money } from '../lib/format'
 import {
-  staffOf, personName, committeeName, mosqueName, custodyBalance, expenseSettled, financeOfficers,
+  staffOf, personName, committeeName, mosqueName, custodyBalance, expenseSettled,
 } from '../lib/selectors'
 import { currentMonth } from '../lib/payroll'
 import { Payroll, PayrollPrintModal, MonthlyReports } from './FinancePayroll'
 import { TeacherContracts } from './TeacherContracts'
-import type { Custody, Expense, InvoiceSettle, UploadedFile } from '../types'
+import type { Custody, Expense } from '../types'
 
 const CST: Record<string, { label: string; tone: string }> = {
   requested: { label: 'بانتظار الاعتماد', tone: 'warn' },
@@ -33,7 +32,9 @@ export default function Finance({ scope }: { scope?: 'complex' }) {
   const isComplex = scope === 'complex'
   // المفوض المالي من فريق المسجد يصل من مساحته بلا معرّف مسجد في الرابط
   const mid = params.mid ?? (user?.mosqueId !== 'complex' ? (user?.mosqueId as string) : '') ?? ''
-  const [tab, setTab] = useState<'custody' | 'payroll' | 'months' | 'contracts'>('payroll')
+  const [search] = useSearchParams()
+  const [tab, setTab] = useState<'custody' | 'payroll' | 'months' | 'contracts'>(
+    search.get('tab') === 'custody' ? 'custody' : 'payroll')
   const [fMosque, setFMosque] = useState('')
   const [month, setMonth] = useState(currentMonth())
   const [printFor, setPrintFor] = useState<string | null>(null)
@@ -171,18 +172,7 @@ function Custodies({ mosqueId, isComplex, filter }: {
                         </div>
                       )}
 
-                      {c.expenses.length > 0 && (
-                        <ul className="mt-3 space-y-1.5">
-                          {c.expenses.map((e) => (
-                            <li key={e.id} className="flex flex-wrap items-center gap-2 text-[12px] bg-navy-50 rounded-xl px-3 py-2">
-                              <span className="font-bold">{e.description}</span>
-                              <span className="tabular-nums font-black text-navy-700">{money(e.amount)}</span>
-                              <span className="text-ink-500">{fmtDate(e.date)}</span>
-                              <InvoiceChip e={e} />
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                      <ExpenseItems custody={c} />
 
                       {c.status === 'closed' && (
                         <p className="text-[12px] text-navy-800 font-bold mt-2">
@@ -223,117 +213,6 @@ function Custodies({ mosqueId, isComplex, filter }: {
   )
 }
 
-function InvoiceChip({ e }: { e: Expense }) {
-  const { db } = useDb()
-  if (e.invoice) {
-    return <a href={fileSrc(e.invoice)} download={e.invoice.name} target="_blank" rel="noreferrer"
-      className="chip bg-navy-100 text-navy-800">🧾 الفاتورة مرفوعة</a>
-  }
-  if (e.settle === 'finance' && e.receivedBy) {
-    return <span className="chip bg-navy-50 text-navy-800 ring-1 ring-navy-200" title="سُلِّمت الفاتورة الأصلية للمسؤول المالي">
-      🤝 لدى المسؤول المالي: {personName(db, e.receivedBy)}</span>
-  }
-  return <span className="chip bg-orange-100 text-orange-700">بدون فاتورة</span>
-}
-
-const SETTLE_OPTIONS: { value: InvoiceSettle; icon: string; label: string; hint: string }[] = [
-  { value: 'finance', icon: '🤝', label: 'الإقفال عند المسؤول المالي', hint: 'تُسلَّم الفاتورة الأصلية للمسؤول المالي ويُسجَّل استلامه لها' },
-  { value: 'upload', icon: '📤', label: 'رفع الفاتورة على الموقع', hint: 'صورة الفاتورة أو ملف PDF تُحفظ مع المصروف' },
-]
-
-function ExpenseModal({ custody, onClose }: { custody: Custody; onClose: () => void }) {
-  const { db, set } = useDb()
-  const { user } = useAuth()
-  const toast = useToast()
-  const [amount, setAmount] = useState('')
-  const [description, setDescription] = useState('')
-  const [date, setDate] = useState(todayISO())
-  const [settle, setSettle] = useState<InvoiceSettle | undefined>()
-  const [invoice, setInvoice] = useState<UploadedFile | undefined>()
-  const officers = financeOfficers(db, custody.mosqueId)
-  const [receivedBy, setReceivedBy] = useState(
-    officers.some((p) => p.id === user?.id) ? user!.id : officers.length === 1 ? officers[0].id : '')
-
-  const b = custodyBalance(custody)
-
-  const save = () => {
-    const amt = Number(amount)
-    if (!amt) return toast('حدّد مبلغ المصروف.', 'bad')
-    if (!description.trim()) return toast('اكتب بيان المصروف.', 'bad')
-    if (!settle) return toast('اختر طريقة إقفال الفاتورة: عند المسؤول المالي أو رفعها على الموقع.', 'bad')
-    if (settle === 'upload' && !invoice) return toast('أرفق صورة الفاتورة أو ملفها.', 'bad')
-    if (settle === 'finance' && !receivedBy) return toast('حدّد المسؤول المالي الذي استلم الفاتورة.', 'bad')
-    if (amt > b.remaining) return toast(`المبلغ يتجاوز المتبقي في العهدة (${money(b.remaining)}).`, 'bad')
-    set((d) => {
-      const c = d.custodies.find((x) => x.id === custody.id)!
-      c.expenses.push({
-        id: uid('e'), amount: amt, description: description.trim(), date, settle,
-        ...(settle === 'upload' ? { invoice } : { receivedBy }),
-        recordedBy: user?.id,
-      })
-    })
-    toast(settle === 'upload' ? 'تم إقفال المصروف برفع الفاتورة' : 'تم إقفال المصروف عند المسؤول المالي')
-    onClose()
-  }
-
-  return (
-    <Modal open onClose={onClose} title="إقفال مصروف بفاتورة"
-      footer={<><button className="btn-primary" onClick={save}>إقفال المصروف</button>
-        <button className="btn-ghost" onClick={onClose}>إلغاء</button></>}>
-      <div className="space-y-4">
-        <div className="rounded-xl bg-navy-50 border border-navy-100 px-4 py-3 text-[12.5px] font-bold text-navy-800">
-          العهدة: {custody.purpose} — المتبقي {money(b.remaining)} من {money(custody.amount)}
-        </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="المبلغ (ر.س)" required>
-            <input type="number" className="field" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
-          </Field>
-          <Field label="تاريخ الصرف" required>
-            <input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} />
-          </Field>
-        </div>
-        <Field label="بيان المصروف" required>
-          <input className="field" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="مثال: شراء جوائز" />
-        </Field>
-
-        <div>
-          <label className="label">طريقة إقفال الفاتورة <span className="text-orange-600">*</span></label>
-          <div className="grid sm:grid-cols-2 gap-2" role="radiogroup" aria-label="طريقة إقفال الفاتورة">
-            {SETTLE_OPTIONS.map((o) => {
-              const on = settle === o.value
-              return (
-                <button key={o.value} type="button" role="radio" aria-checked={on} onClick={() => setSettle(o.value)}
-                  className={`text-right rounded-2xl border-2 px-3.5 py-3 transition
-                    ${on ? 'border-navy-600 bg-navy-50 shadow-soft' : 'border-line bg-surface hover:bg-navy-50/50'}`}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[16px]">{o.icon}</span>
-                    <span className={`font-bold text-[13.5px] ${on ? 'text-navy-800' : 'text-ink-900'}`}>{o.label}</span>
-                  </div>
-                  <p className="text-[11px] font-bold text-ink-500 mt-1 leading-5">{o.hint}</p>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {settle === 'finance' && (
-          <Field label="المسؤول المالي المستلم للفاتورة" required hint="يحتفظ بالفاتورة الأصلية، ويُحتسب المبلغ ضمن المنصرف">
-            <Select value={receivedBy} onChange={setReceivedBy} placeholder="اختر…"
-              options={officers.map((p) => ({ value: p.id, label: `${p.name} — ${p.jobTitle}` }))} />
-          </Field>
-        )}
-        {settle === 'upload' && (
-          <Field label="الفاتورة" required hint="صورة أو ملف PDF">
-            <FileDrop multiple={false} label="إرفاق الفاتورة (صورة أو ملف)"
-              onFiles={(fs) => setInvoice(fs[0])} />
-            {invoice && <FileChips files={[invoice]} onRemove={() => setInvoice(undefined)} />}
-          </Field>
-        )}
-      </div>
-    </Modal>
-  )
-}
-
 function CloseModal({ custody, onClose }: { custody: Custody; onClose: () => void }) {
   const { db, set } = useDb()
   const toast = useToast()
@@ -343,6 +222,7 @@ function CloseModal({ custody, onClose }: { custody: Custody; onClose: () => voi
   const [note, setNote] = useState('')
 
   const noInvoice = custody.expenses.filter((e) => !expenseSettled(e)).length
+  const unconfirmed = custody.expenses.filter((e) => e.settle === 'finance' && !e.confirmedAt).length
   const uploaded = custody.expenses.filter((e) => e.invoice)
   const atFinance = custody.expenses.filter((e) => e.settle === 'finance' && e.receivedBy)
   const sum = (xs: Expense[]) => xs.reduce((s, e) => s + e.amount, 0)
@@ -350,6 +230,7 @@ function CloseModal({ custody, onClose }: { custody: Custody; onClose: () => voi
   const save = () => {
     if (!responsibleId) return toast('حدّد المسؤول عن الاستلام والإقفال.', 'bad')
     if (noInvoice > 0 && !confirm(`يوجد ${noInvoice} مصروف بلا فاتورة مرفقة. الإقفال على أي حال؟`)) return
+    if (unconfirmed > 0 && !confirm(`يوجد ${unconfirmed} فاتورة لم يؤكد المسؤول المالي استلامها. الإقفال على أي حال؟`)) return
     const ret = Number(returned) || 0
     if (Math.abs(b.spent + ret - custody.amount) > 0.5) {
       if (!confirm(`المنصرف ${money(b.spent)} + المُعاد ${money(ret)} لا يساوي مبلغ العهدة ${money(custody.amount)}. المتابعة على أي حال؟`)) return

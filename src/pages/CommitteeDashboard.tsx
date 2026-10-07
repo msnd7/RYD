@@ -5,6 +5,7 @@ import { useAuth } from '../store/auth'
 import { Card, Badge, Empty, Progress, Stat } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { CustodyRequestModal } from '../components/CustodyRequestModal'
+import { MyCustodies } from '../components/CustodyExpense'
 import { HonorsTeaser } from '../components/honors'
 import { LeaderTaskModal, TeamNoteModal, TeamNotesList } from '../components/TeamModals'
 import { Donut, C } from '../components/charts'
@@ -64,6 +65,7 @@ export default function CommitteeDashboard() {
     return (
       <div className="space-y-5">
         <PageHeader title="لوحة لجنتي" description="ما يخصّ لجنتك من مهام وحضور وعهد." />
+        <MyCustodies />
         <Card>
           <Empty icon="🏷️" title="لم تُسكَّن في أي لجنة بعد"
             hint="يسكّنك مشرف المسجد في لجنتك، فتظهر هنا لوحتها ومهامها وعهدها ومحاضرها." />
@@ -142,6 +144,8 @@ export default function CommitteeDashboard() {
           </button>
         </>}
       />
+
+      <MyCustodies />
 
       {/* لوحة قائد اللجنة */}
       {isLeader && (

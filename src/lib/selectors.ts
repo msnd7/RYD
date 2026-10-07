@@ -102,6 +102,31 @@ export const financeOfficers = (db: DB, mosqueId: ID) =>
   db.people.filter((p) => p.active && (p.role === 'director' || p.financeAccess)
     && (p.mosqueId === mosqueId || p.mosqueId === 'complex'))
 
+/** عهد مفتوحة على صاحب الطلب — يُقفل مصروفاتها بنفسه */
+export const myOpenCustodies = (db: DB, userId: ID) =>
+  db.custodies.filter((c) => c.status === 'approved' && c.requesterId === userId)
+
+/** فواتير سُلِّمت للمسؤول المالي ولم يؤكد استلامها بعد */
+export const pendingReceipts = (db: DB, userId: ID) =>
+  db.custodies.filter((c) => c.status !== 'rejected').flatMap((c) =>
+    c.expenses
+      .filter((e) => e.settle === 'finance' && e.receivedBy === userId && !e.confirmedAt)
+      .map((e) => ({ custody: c, expense: e })))
+
+/** مسار تبويب العهد في الإدارة المالية بحسب دور المستخدم */
+export function financePath(user: Person, mosqueId: ID) {
+  const base = user.role === 'member' ? '/my/finance'
+    : user.role === 'supervisor' ? `/m/${user.mosqueId}/finance` : `/m/${mosqueId}/finance`
+  return `${base}?tab=custody`
+}
+
+/** الشاشة الرئيسية لكل دور — وفيها بطاقة «عهدي المفتوحة» */
+export function homePath(user: Person) {
+  if (user.role === 'director') return '/'
+  if (user.role === 'supervisor') return `/m/${user.mosqueId}`
+  return '/my'
+}
+
 export function custodyBalance(c: { amount: number; expenses: { amount: number }[]; returned?: number }) {
   const spent = c.expenses.reduce((s, e) => s + e.amount, 0)
   return { spent, remaining: c.amount - spent - (c.returned ?? 0) }

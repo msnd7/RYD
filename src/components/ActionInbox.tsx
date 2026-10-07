@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useDb } from '../store/db'
 import { useAuth } from '../store/auth'
 import { todayISO } from '../lib/date'
-import { personName, mosqueName, teacherName } from '../lib/selectors'
+import { personName, mosqueName, teacherName, pendingReceipts, financePath } from '../lib/selectors'
 import { cycleInfo, monthStatus } from '../lib/payroll'
 import { monthLabel } from '../lib/date'
 import { Card, Empty } from './ui'
@@ -55,6 +55,16 @@ export function ActionInbox({ mosqueId }: { mosqueId?: string }) {
       })
     })
   }
+
+  // ٢٫٢) فواتير سُلِّمت للمستخدم بانتظار تأكيد استلامها
+  pendingReceipts(db, user.id).forEach(({ custody: c, expense: e }) => {
+    items.push({
+      id: `rc-${e.id}`, icon: '🧾', tone: 'bg-navy-100 text-navy-800',
+      text: `أكّد استلام فاتورة «${e.description}» بمبلغ ${e.amount.toLocaleString('en-US')} ريال`,
+      sub: `${personName(db, e.recordedBy)} · ${c.purpose}`,
+      to: financePath(user, c.mosqueId), cta: 'تأكيد الاستلام',
+    })
+  })
 
   // ٢٫٥) الرواتب: مسيّر الشهر الماضي حان صرفه، وعقود معلمين بانتظار التوقيع
   if (isDirector || user.financeAccess) {

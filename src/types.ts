@@ -176,6 +176,7 @@ export interface Expense {
   settle?: InvoiceSettle
   invoice?: UploadedFile  // عند الرفع على الموقع
   receivedBy?: ID         // المسؤول المالي الذي استلم الفاتورة
+  confirmedAt?: string    // تأكيد المسؤول المالي استلامها (تلقائي إن سجّلها بنفسه)
   recordedBy?: ID
 }
 

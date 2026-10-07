@@ -4,6 +4,7 @@ import { useAuth } from '../store/auth'
 import { Card, Progress, Badge, Empty, StatStrip } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { ActionInbox } from '../components/ActionInbox'
+import { MyCustodies } from '../components/CustodyExpense'
 import { HonorsTeaser } from '../components/honors'
 import { BarChart, Donut, SplitBar, C } from '../components/charts'
 import { todayISO, shiftDays, fmtDate, dueLabel } from '../lib/date'
@@ -54,6 +55,8 @@ export default function Dashboard() {
         title="لوحة المعلومات"
         description="ملخّص يومي لحضور موظفي المسجد ومعلميه وحالة المهام واللجان — والمالية لها صفحتها المستقلة."
       />
+
+      <MyCustodies />
 
       <StatStrip items={[
         { label: 'حضور اليوم', value: `${presentToday}/${staff.length}`,
