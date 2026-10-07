@@ -11,11 +11,13 @@ import { CustodyRequestModal } from '../components/CustodyRequestModal'
 import { todayISO, fmtDate } from '../lib/date'
 import { fileSrc } from '../lib/files'
 import { money } from '../lib/format'
-import { staffOf, personName, committeeName, mosqueName, custodyBalance } from '../lib/selectors'
+import {
+  staffOf, personName, committeeName, mosqueName, custodyBalance, expenseSettled, financeOfficers,
+} from '../lib/selectors'
 import { currentMonth } from '../lib/payroll'
 import { Payroll, PayrollPrintModal, MonthlyReports } from './FinancePayroll'
 import { TeacherContracts } from './TeacherContracts'
-import type { Custody, UploadedFile } from '../types'
+import type { Custody, Expense, InvoiceSettle, UploadedFile } from '../types'
 
 const CST: Record<string, { label: string; tone: string }> = {
   requested: { label: 'بانتظار الاعتماد', tone: 'warn' },
@@ -123,14 +125,14 @@ function Custodies({ mosqueId, isComplex, filter }: {
     <div className="space-y-5">
       <StatStrip items={[
         { label: 'إجمالي العهد المصروفة', value: money(totals.granted) },
-        { label: 'المنصرف بفواتير', value: money(totals.spent) },
+        { label: 'المنصرف المُقفل بفواتير', value: money(totals.spent) },
         { label: 'مبالغ مُعادة', value: money(totals.returned) },
         { label: 'مفتوحة تحت التسوية', value: money(totals.open),
           hint: `${list.filter((c) => c.status === 'approved').length} عهدة`, accent: totals.open > 0 },
       ]} />
 
       <Card title="العهد والمصروفات"
-        subtitle="يطلب المشرف أو اللجنة صرف عهدة، ويعتمدها المدير، ثم تُسجَّل مصروفاتها بفواتيرها وتُقفل ويُعاد المتبقي"
+        subtitle="يطلب المشرف أو اللجنة صرف عهدة، ويعتمدها المدير، ثم يُقفل كل مصروف بفاتورته — تسليمًا للمسؤول المالي أو رفعًا على الموقع — وتُقفل العهدة ويُعاد المتبقي"
         action={<>{filter}
           <button className="btn-primary btn-sm" onClick={() => setOpen(true)}>＋ طلب صرف عهدة</button></>}
         pad={false}>
@@ -176,10 +178,7 @@ function Custodies({ mosqueId, isComplex, filter }: {
                               <span className="font-bold">{e.description}</span>
                               <span className="tabular-nums font-black text-navy-700">{money(e.amount)}</span>
                               <span className="text-ink-500">{fmtDate(e.date)}</span>
-                              {e.invoice
-                                ? <a href={fileSrc(e.invoice)} download={e.invoice.name} target="_blank" rel="noreferrer"
-                                    className="chip bg-navy-100 text-navy-800">🧾 الفاتورة</a>
-                                : <span className="chip bg-orange-100 text-orange-700">بدون فاتورة</span>}
+                              <InvoiceChip e={e} />
                             </li>
                           ))}
                         </ul>
@@ -205,7 +204,7 @@ function Custodies({ mosqueId, isComplex, filter }: {
                       <button className="btn-ghost btn-sm" onClick={() => decide(c, 'rejected')}>رفض الطلب</button>
                     </>}
                     {c.status === 'approved' && <>
-                      <button className="btn-primary btn-sm" onClick={() => setExpenseFor(c)}>＋ تسجيل مصروف بفاتورة</button>
+                      <button className="btn-primary btn-sm" onClick={() => setExpenseFor(c)}>＋ إقفال مصروف بفاتورة</button>
                       <button className="btn-accent btn-sm" onClick={() => setCloseFor(c)}>إقفال العهدة</button>
                     </>}
                   </div>
@@ -224,13 +223,36 @@ function Custodies({ mosqueId, isComplex, filter }: {
   )
 }
 
+function InvoiceChip({ e }: { e: Expense }) {
+  const { db } = useDb()
+  if (e.invoice) {
+    return <a href={fileSrc(e.invoice)} download={e.invoice.name} target="_blank" rel="noreferrer"
+      className="chip bg-navy-100 text-navy-800">🧾 الفاتورة مرفوعة</a>
+  }
+  if (e.settle === 'finance' && e.receivedBy) {
+    return <span className="chip bg-navy-50 text-navy-800 ring-1 ring-navy-200" title="سُلِّمت الفاتورة الأصلية للمسؤول المالي">
+      🤝 لدى المسؤول المالي: {personName(db, e.receivedBy)}</span>
+  }
+  return <span className="chip bg-orange-100 text-orange-700">بدون فاتورة</span>
+}
+
+const SETTLE_OPTIONS: { value: InvoiceSettle; icon: string; label: string; hint: string }[] = [
+  { value: 'finance', icon: '🤝', label: 'الإقفال عند المسؤول المالي', hint: 'تُسلَّم الفاتورة الأصلية للمسؤول المالي ويُسجَّل استلامه لها' },
+  { value: 'upload', icon: '📤', label: 'رفع الفاتورة على الموقع', hint: 'صورة الفاتورة أو ملف PDF تُحفظ مع المصروف' },
+]
+
 function ExpenseModal({ custody, onClose }: { custody: Custody; onClose: () => void }) {
-  const { set } = useDb()
+  const { db, set } = useDb()
+  const { user } = useAuth()
   const toast = useToast()
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(todayISO())
+  const [settle, setSettle] = useState<InvoiceSettle | undefined>()
   const [invoice, setInvoice] = useState<UploadedFile | undefined>()
+  const officers = financeOfficers(db, custody.mosqueId)
+  const [receivedBy, setReceivedBy] = useState(
+    officers.some((p) => p.id === user?.id) ? user!.id : officers.length === 1 ? officers[0].id : '')
 
   const b = custodyBalance(custody)
 
@@ -238,19 +260,25 @@ function ExpenseModal({ custody, onClose }: { custody: Custody; onClose: () => v
     const amt = Number(amount)
     if (!amt) return toast('حدّد مبلغ المصروف.', 'bad')
     if (!description.trim()) return toast('اكتب بيان المصروف.', 'bad')
-    if (!invoice) return toast('أرفق صورة الفاتورة أو ملفها — لا يُسجَّل مصروف بلا فاتورة.', 'bad')
+    if (!settle) return toast('اختر طريقة إقفال الفاتورة: عند المسؤول المالي أو رفعها على الموقع.', 'bad')
+    if (settle === 'upload' && !invoice) return toast('أرفق صورة الفاتورة أو ملفها.', 'bad')
+    if (settle === 'finance' && !receivedBy) return toast('حدّد المسؤول المالي الذي استلم الفاتورة.', 'bad')
     if (amt > b.remaining) return toast(`المبلغ يتجاوز المتبقي في العهدة (${money(b.remaining)}).`, 'bad')
     set((d) => {
       const c = d.custodies.find((x) => x.id === custody.id)!
-      c.expenses.push({ id: uid('e'), amount: amt, description: description.trim(), date, invoice })
+      c.expenses.push({
+        id: uid('e'), amount: amt, description: description.trim(), date, settle,
+        ...(settle === 'upload' ? { invoice } : { receivedBy }),
+        recordedBy: user?.id,
+      })
     })
-    toast('تم تسجيل المصروف وإرفاق الفاتورة')
+    toast(settle === 'upload' ? 'تم إقفال المصروف برفع الفاتورة' : 'تم إقفال المصروف عند المسؤول المالي')
     onClose()
   }
 
   return (
-    <Modal open onClose={onClose} title="تسجيل مصروف وإرفاق الفاتورة"
-      footer={<><button className="btn-primary" onClick={save}>حفظ المصروف</button>
+    <Modal open onClose={onClose} title="إقفال مصروف بفاتورة"
+      footer={<><button className="btn-primary" onClick={save}>إقفال المصروف</button>
         <button className="btn-ghost" onClick={onClose}>إلغاء</button></>}>
       <div className="space-y-4">
         <div className="rounded-xl bg-navy-50 border border-navy-100 px-4 py-3 text-[12.5px] font-bold text-navy-800">
@@ -267,11 +295,40 @@ function ExpenseModal({ custody, onClose }: { custody: Custody; onClose: () => v
         <Field label="بيان المصروف" required>
           <input className="field" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="مثال: شراء جوائز" />
         </Field>
-        <Field label="الفاتورة" required hint="صورة أو ملف PDF — لا يُسجَّل مصروف بلا فاتورة">
-          <FileDrop multiple={false} label="إرفاق الفاتورة (صورة أو ملف)"
-            onFiles={(fs) => setInvoice(fs[0])} />
-          {invoice && <FileChips files={[invoice]} onRemove={() => setInvoice(undefined)} />}
-        </Field>
+
+        <div>
+          <label className="label">طريقة إقفال الفاتورة <span className="text-orange-600">*</span></label>
+          <div className="grid sm:grid-cols-2 gap-2" role="radiogroup" aria-label="طريقة إقفال الفاتورة">
+            {SETTLE_OPTIONS.map((o) => {
+              const on = settle === o.value
+              return (
+                <button key={o.value} type="button" role="radio" aria-checked={on} onClick={() => setSettle(o.value)}
+                  className={`text-right rounded-2xl border-2 px-3.5 py-3 transition
+                    ${on ? 'border-navy-600 bg-navy-50 shadow-soft' : 'border-line bg-surface hover:bg-navy-50/50'}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[16px]">{o.icon}</span>
+                    <span className={`font-bold text-[13.5px] ${on ? 'text-navy-800' : 'text-ink-900'}`}>{o.label}</span>
+                  </div>
+                  <p className="text-[11px] font-bold text-ink-500 mt-1 leading-5">{o.hint}</p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {settle === 'finance' && (
+          <Field label="المسؤول المالي المستلم للفاتورة" required hint="يحتفظ بالفاتورة الأصلية، ويُحتسب المبلغ ضمن المنصرف">
+            <Select value={receivedBy} onChange={setReceivedBy} placeholder="اختر…"
+              options={officers.map((p) => ({ value: p.id, label: `${p.name} — ${p.jobTitle}` }))} />
+          </Field>
+        )}
+        {settle === 'upload' && (
+          <Field label="الفاتورة" required hint="صورة أو ملف PDF">
+            <FileDrop multiple={false} label="إرفاق الفاتورة (صورة أو ملف)"
+              onFiles={(fs) => setInvoice(fs[0])} />
+            {invoice && <FileChips files={[invoice]} onRemove={() => setInvoice(undefined)} />}
+          </Field>
+        )}
       </div>
     </Modal>
   )
@@ -285,7 +342,10 @@ function CloseModal({ custody, onClose }: { custody: Custody; onClose: () => voi
   const [responsibleId, setResponsibleId] = useState(custody.responsibleId ?? '')
   const [note, setNote] = useState('')
 
-  const noInvoice = custody.expenses.filter((e) => !e.invoice).length
+  const noInvoice = custody.expenses.filter((e) => !expenseSettled(e)).length
+  const uploaded = custody.expenses.filter((e) => e.invoice)
+  const atFinance = custody.expenses.filter((e) => e.settle === 'finance' && e.receivedBy)
+  const sum = (xs: Expense[]) => xs.reduce((s, e) => s + e.amount, 0)
 
   const save = () => {
     if (!responsibleId) return toast('حدّد المسؤول عن الاستلام والإقفال.', 'bad')
@@ -312,6 +372,8 @@ function CloseModal({ custody, onClose }: { custody: Custody; onClose: () => voi
         <ul className="rounded-2xl bg-navy-50 border border-line p-4 space-y-2 text-[13px]">
           <li className="flex justify-between"><span className="text-ink-500">مبلغ العهدة</span><b>{money(custody.amount)}</b></li>
           <li className="flex justify-between"><span className="text-ink-500">المنصرف بفواتير</span><b>{money(b.spent)}</b></li>
+          <li className="flex justify-between text-[12px] pr-3"><span className="text-ink-500">🤝 مُقفل عند المسؤول المالي ({atFinance.length})</span><b>{money(sum(atFinance))}</b></li>
+          <li className="flex justify-between text-[12px] pr-3"><span className="text-ink-500">📤 مرفوع على الموقع ({uploaded.length})</span><b>{money(sum(uploaded))}</b></li>
           <li className="flex justify-between border-t border-line pt-2"><span className="text-ink-500">المتبقي الواجب إعادته</span>
             <b className="text-orange-700">{money(b.remaining)}</b></li>
         </ul>

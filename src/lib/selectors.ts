@@ -1,4 +1,4 @@
-import type { DB, ID, Person, Task, Attendance, Teacher } from '../types'
+import type { DB, ID, Person, Task, Attendance, Teacher, Expense } from '../types'
 import { todayISO, shiftDays, daysBetween, monthKey } from './date'
 
 export const personName = (db: DB, id?: ID) =>
@@ -92,6 +92,15 @@ export function visibleAnnouncements(db: DB, user: Person) {
     })
     .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.createdAt.localeCompare(a.createdAt))
 }
+
+/** هل أُقفلت فاتورة المصروف — مرفوعة على الموقع أو مسلَّمة للمسؤول المالي */
+export const expenseSettled = (e: Expense) =>
+  e.settle === 'finance' ? !!e.receivedBy : !!e.invoice
+
+/** من يحق له استلام الفواتير: المدير ومن يحمل تفويضًا ماليًا في المسجد أو المجمع */
+export const financeOfficers = (db: DB, mosqueId: ID) =>
+  db.people.filter((p) => p.active && (p.role === 'director' || p.financeAccess)
+    && (p.mosqueId === mosqueId || p.mosqueId === 'complex'))
 
 export function custodyBalance(c: { amount: number; expenses: { amount: number }[]; returned?: number }) {
   const spent = c.expenses.reduce((s, e) => s + e.amount, 0)
