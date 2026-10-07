@@ -4,6 +4,7 @@ import { useAuth } from '../store/auth'
 import { Card, Progress, Badge, StatStrip } from '../components/ui'
 import { PageHeader } from '../components/PageHeader'
 import { ActionInbox } from '../components/ActionInbox'
+import { MyCustodies } from '../components/CustodyExpense'
 import { LogoMark } from '../components/Brand'
 import { HonorsTeaser } from '../components/honors'
 import { todayISO, shiftDays, fmtDate, fmtHijri, fmtDayName } from '../lib/date'
@@ -49,6 +50,8 @@ export default function ComplexHome() {
           )}
         </div>
       </section>
+
+      <MyCustodies />
 
       <StatStrip items={[
         { label: 'المساجد', value: db.mosques.length },

@@ -2,14 +2,18 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDb } from '../store/db'
 import { useAuth } from '../store/auth'
-import { dueSoonTasks } from '../lib/selectors'
-import { dueLabel, fmtDate } from '../lib/date'
+import {
+  dueSoonTasks, myOpenCustodies, pendingReceipts, custodyBalance, homePath, financePath, personName,
+} from '../lib/selectors'
+import { money } from '../lib/format'
+import { dueLabel, fmtDate, todayISO } from '../lib/date'
 
 const SEEN = 'ryd.notice.seen'
 
 /**
  * إشعار يظهر لكل مستخدم عند دخوله للمنصة لمدة عشر ثوانٍ ثم يختفي تلقائيًا،
- * ويعرض قائمة المهام التي اقترب موعدها أو تأخرت.
+ * ويذكّره بعهده المفتوحة، والفواتير المسلَّمة له بانتظار تأكيده،
+ * والمهام التي اقترب موعدها أو تأخرت.
  */
 export function LoginNotice() {
   const { db } = useDb()
@@ -19,17 +23,22 @@ export function LoginNotice() {
   const [left, setLeft] = useState(db.settings.reminderSeconds || 10)
 
   const items = user ? dueSoonTasks(db, user) : []
+  const custodies = user ? myOpenCustodies(db, user.id) : []
+  const receipts = user ? pendingReceipts(db, user.id) : []
+  const total = items.length + custodies.length + receipts.length
+
+  const key = user ? `${SEEN}.${user.id}.${new Date().toISOString().slice(0, 10)}` : ''
+  // يُعلَّم «شوهد» عند إغلاقه فقط — فلا يضيع إن أعاد التوجيه الأول تركيب الواجهة
+  const close = () => { sessionStorage.setItem(key, '1'); setShow(false) }
 
   useEffect(() => {
-    if (!user || items.length === 0) return
-    const key = `${SEEN}.${user.id}.${new Date().toISOString().slice(0, 10)}`
+    if (!user || total === 0) return
     if (sessionStorage.getItem(key)) return
-    sessionStorage.setItem(key, '1')
     setShow(true)
     const secs = db.settings.reminderSeconds || 10
     setLeft(secs)
     const iv = setInterval(() => setLeft((s) => s - 1), 1000)
-    const to = setTimeout(() => setShow(false), secs * 1000)
+    const to = setTimeout(close, secs * 1000)
     return () => { clearInterval(iv); clearTimeout(to) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
@@ -37,6 +46,13 @@ export function LoginNotice() {
   if (!show || !user) return null
 
   const late = items.filter((t) => dueLabel(t.dueDate).diff < 0).length
+  const today = todayISO()
+  const go = (to: string) => { close(); nav(to) }
+  const summary = [
+    custodies.length ? `${custodies.length} عهدة مفتوحة` : '',
+    receipts.length ? `${receipts.length} فاتورة بانتظار تأكيدك` : '',
+    items.length ? `${late > 0 ? `${late} متأخرة · ` : ''}${items.length} مهمة` : '',
+  ].filter(Boolean).join(' · ')
 
   return (
     <div className="fixed z-[70] top-4 left-4 right-4 sm:right-auto sm:left-4 sm:w-[400px] no-print pop-in">
@@ -45,22 +61,51 @@ export function LoginNotice() {
           <div className="flex items-center gap-2.5">
             <span className="text-xl">🔔</span>
             <div>
-              <div className="font-extrabold text-[15px]">تنبيه المواعيد القريبة</div>
-              <div className="text-[11px] text-white/70">
-                {late > 0 ? `${late} متأخرة · ` : ''}{items.length} مهمة تحتاج متابعتك
+              <div className="font-extrabold text-[15px]">
+                {custodies.length || receipts.length ? 'تذكير بما يحتاج متابعتك' : 'تنبيه المواعيد القريبة'}
               </div>
+              <div className="text-[11px] text-white/70">{summary}</div>
             </div>
           </div>
-          <button onClick={() => setShow(false)} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface/15" aria-label="إغلاق">✕</button>
+          <button onClick={close} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface/15" aria-label="إغلاق">✕</button>
         </div>
 
         <ul className="max-h-[46vh] overflow-y-auto divide-y divide-line">
+          {custodies.map((c) => {
+            const b = custodyBalance(c)
+            return (
+              <li key={c.id}>
+                <button onClick={() => go(homePath(user))} className="w-full text-right px-5 py-3 hover:bg-navy-50/60 transition">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="font-bold text-sm text-ink-900 leading-6">💳 عهدة مفتوحة: {c.purpose}</span>
+                    <span className="chip shrink-0 bg-orange-100 text-orange-700">
+                      {c.closeDate < today ? 'تجاوزت الإقفال' : `الإقفال ${fmtDate(c.closeDate)}`}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-ink-500 mt-1">
+                    المتبقي {money(b.remaining)} من {money(c.amount)} — أقفل مصروفاتها بفواتيرها
+                  </div>
+                </button>
+              </li>
+            )
+          })}
+          {receipts.map(({ custody: c, expense: e }) => (
+            <li key={e.id}>
+              <button onClick={() => go(financePath(user, c.mosqueId))} className="w-full text-right px-5 py-3 hover:bg-navy-50/60 transition">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="font-bold text-sm text-ink-900 leading-6">🧾 أكّد استلام فاتورة: {e.description}</span>
+                  <span className="chip shrink-0 bg-navy-50 text-navy-800">{money(e.amount)}</span>
+                </div>
+                <div className="text-[11px] text-ink-500 mt-1">من {personName(db, e.recordedBy)} · عهدة {c.purpose}</div>
+              </button>
+            </li>
+          ))}
           {items.slice(0, 6).map((t) => {
             const d = dueLabel(t.dueDate)
             return (
               <li key={t.id}>
                 <button
-                  onClick={() => { setShow(false); nav(`/m/${t.mosqueId}/tasks`) }}
+                  onClick={() => go(`/m/${t.mosqueId}/tasks`)}
                   className="w-full text-right px-5 py-3 hover:bg-navy-50/60 transition">
                   <div className="flex items-start justify-between gap-3">
                     <span className="font-bold text-sm text-ink-900 leading-6">{t.title}</span>

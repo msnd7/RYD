@@ -6,11 +6,12 @@ import { Card, Modal, Field, Select, Badge, Empty, useToast, Progress, Menu, Sta
 import { PageHeader } from '../components/PageHeader'
 import { CustodyRequestModal } from '../components/CustodyRequestModal'
 import { TeamNoteModal } from '../components/TeamModals'
+import { ExpenseModal, canCloseExpenses } from '../components/CustodyExpense'
 import { committeesOf, staffOf, taskCounts, personName, custodyBalance } from '../lib/selectors'
 import { fmtDate, dueLabel, todayISO, shiftDays } from '../lib/date'
 import { money } from '../lib/format'
 import { KIND_LABEL, KIND_TONE } from './Tasks'
-import type { Committee, TaskKind } from '../types'
+import type { Committee, Custody, TaskKind } from '../types'
 
 const CST: Record<string, { label: string; tone: string }> = {
   requested: { label: 'بانتظار اعتماد المدير', tone: 'warn' },
@@ -22,8 +23,9 @@ const CST: Record<string, { label: string; tone: string }> = {
 export default function Committees() {
   const { mid = '' } = useParams()
   const { db, set } = useDb()
-  const { user, isDirector } = useAuth()
+  const { user, isDirector, canFinance } = useAuth()
   const toast = useToast()
+  const [expenseFor, setExpenseFor] = useState<Custody | null>(null)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Committee | null>(null)
   const [taskFor, setTaskFor] = useState<Committee | null>(null)
@@ -194,6 +196,9 @@ export default function Committees() {
                           {x.status === 'approved' && (
                             <div className="mt-2"><Progress value={x.amount ? (b.spent / x.amount) * 100 : 0} tone="gold" /></div>
                           )}
+                          {canCloseExpenses(user, canFinance, x) && (
+                            <button className="btn-soft btn-sm mt-2" onClick={() => setExpenseFor(x)}>＋ إقفال مصروف بفاتورة</button>
+                          )}
                         </li>
                       )
                     })}
@@ -224,6 +229,7 @@ export default function Committees() {
       <CommitteeModal open={open} onClose={() => { setOpen(false); setEditing(null) }} committee={editing} mosqueId={mid} />
       <QuickTaskModal committee={taskFor} onClose={() => setTaskFor(null)} />
       {noteFor && <TeamNoteModal committees={[noteFor]} onClose={() => setNoteFor(null)} />}
+      {expenseFor && <ExpenseModal custody={expenseFor} onClose={() => setExpenseFor(null)} />}
       <CustodyRequestModal
         open={!!custodyFor} onClose={() => setCustodyFor(null)}
         mosqueId={custodyFor?.mosqueId ?? mid} committeeId={custodyFor?.id}

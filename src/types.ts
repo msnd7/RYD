@@ -165,12 +165,19 @@ export interface Announcement {
 
 export type CustodyStatus = 'requested' | 'approved' | 'rejected' | 'closed'
 
+/** طريقة إقفال فاتورة المصروف: تسليمها ورقيًا للمسؤول المالي، أو رفعها على الموقع */
+export type InvoiceSettle = 'finance' | 'upload'
+
 export interface Expense {
   id: ID
   amount: number
   description: string
   date: string
-  invoice?: UploadedFile
+  settle?: InvoiceSettle
+  invoice?: UploadedFile  // عند الرفع على الموقع
+  receivedBy?: ID         // المسؤول المالي الذي استلم الفاتورة
+  confirmedAt?: string    // تأكيد المسؤول المالي استلامها (تلقائي إن سجّلها بنفسه)
+  recordedBy?: ID
 }
 
 export interface Custody {
